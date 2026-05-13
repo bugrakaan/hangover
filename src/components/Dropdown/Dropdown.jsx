@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import { DropdownContext } from '../../context/DropdownContext';
-import { buildFromConfig } from '../../utils/fromConfig';
+import { buildFromConfig } from '../../utils/buildFromConfig';
 
 /**
  * Dropdown — root provider component.
