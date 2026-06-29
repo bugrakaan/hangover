@@ -2,7 +2,7 @@
 
 A React 18 compound-component Dropdown / Field Picker library.
 
-[![npm version](https://img.shields.io/npm/v/@diabolic/hangover.svg)](https://www.npmjs.com/package/@diabolic/hangover)
+[![npm version](https://img.shields.io/npm/v/@diabolic/hangover)](https://www.npmjs.com/package/@diabolic/hangover)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 [Live Demo](https://bugrakaan.github.io/hangover/)
