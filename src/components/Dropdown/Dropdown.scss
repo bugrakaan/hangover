@@ -3,7 +3,6 @@
 //  All classes use .hangoverDropdown parent-selector nesting
 // ─────────────────────────────────────────────
 @use 'sass:color';
-@use '../../assets/fonts/fonts';
 
 // ── Design tokens ─────────────────────────────
 // Defined on :root so portal content (createPortal → body) can inherit them

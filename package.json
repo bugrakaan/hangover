@@ -2,6 +2,24 @@
   "name": "@diabolic/hangover",
   "version": "0.1.0",
   "description": "A headless-style, compound React dropdown/field-picker component library",
+  "license": "MIT",
+  "author": "bugrakaan",
+  "keywords": [
+    "react",
+    "dropdown",
+    "select",
+    "field-picker",
+    "compound-component",
+    "headless"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bugrakaan/hangover.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bugrakaan/hangover/issues"
+  },
+  "homepage": "https://bugrakaan.github.io/hangover/",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "exports": {
@@ -9,11 +27,15 @@
       "import": "./dist/index.esm.js",
       "require": "./dist/index.cjs.js"
     },
+    "prepublishOnly": "npm run build",
     "./styles": "./dist/hangover.css"
   },
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": [
     "dist/hangover.css"
   ],

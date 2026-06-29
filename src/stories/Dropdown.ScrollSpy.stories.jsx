@@ -197,7 +197,7 @@ function IconEmpty() {
   );
 }
 
-export const ProductionMode = {
+const ProductionMode = {
   name: 'Production Mode',
   args: {
     defaultOpen: false,
@@ -425,7 +425,7 @@ function IconHash() {
   );
 }
 
-export const ProductionModeIcons = {
+const ProductionModeIcons = {
   name: 'Production Mode (Icons)',
   args: {
     defaultOpen: false,

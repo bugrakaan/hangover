@@ -2,6 +2,25 @@
 
 A React 18 compound-component Dropdown / Field Picker library.
 
+[![npm version](https://img.shields.io/npm/v/@diabolic/hangover.svg)](https://www.npmjs.com/package/@diabolic/hangover)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[Live Demo](https://bugrakaan.github.io/hangover/)
+
+## Features
+
+- **Compound Components** - Composable `Dropdown.Trigger`, `Panel`, `Navigation`, `Section`, `Group`, `Item` API
+- **Fuzzy Search** - Built-in fuzzy filtering across items (powered by fuse.js)
+- **Two Display Modes** - Scroll-spy with smooth scroll or one-section-at-a-time tab mode
+- **Left Navigation** - Optional nav column with auto-collapse and single-section auto-transform
+- **Checkbox Items** - Multi-select with select-all support
+- **Dark Mode** - Token-based theming with a built-in dark theme
+- **Smart Positioning** - Portal-rendered panel with placement variants and auto-placement
+- **Controlled & Uncontrolled** - Full control or sensible defaults out of the box
+- **Imperative API** - Open, close, and drive state via `ref` with an optional external anchor
+- **Config-driven Rendering** - Build entire menus from a single `fromConfig` object
+- **React 18** - Compound, accessible, headless-style components
+
 ---
 
 ## Installation
@@ -927,8 +946,18 @@ To customise dark mode colors, override the tokens inside `.hangoverDropdown--da
 
 ## Storybook
 
+Explore all components and interactions in the [live demo](https://bugrakaan.github.io/hangover/).
+
+Run locally:
+
 ```bash
 npm run storybook
+```
+
+Build the static demo site (output in `storybook-static/`):
+
+```bash
+npm run build-storybook
 ```
 
 Stories are located in `src/stories/`:
@@ -936,10 +965,16 @@ Stories are located in `src/stories/`:
 | Story | Description |
 |---|---|
 | 1. Basic | Basic usage, with/without nav, single-section auto-transform, open by default, empty state |
-| 2. Scroll Spy | Scroll-spy with nav icons, collapsible navigation, production mode with and without item icons, long text stress test |
+| 2. Scroll Spy | Scroll-spy with nav icons, collapsible navigation, long text stress test |
 | 3. Tab Mode | `displayMode="tab"` |
 | 4. Checkbox | Checkbox items, select-all |
 | 5. Controlled | Controlled state, external anchor + imperative API |
 | 6. Events | Live event stream, cancel event |
 | 7. Placement | All panel placement variants, auto-placement with scroll |
 | 8. From Config | `fromConfig` prop — config-driven rendering with and without auto-collapse |
+
+---
+
+## License
+
+MIT

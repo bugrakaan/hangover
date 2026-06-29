@@ -3669,123 +3669,6 @@ function renderSectionNodes(sections) {
 }
 
 /**
- * fromConfig — render a full Dropdown tree from a plain JS config object.
- *
- * @param {object} config
- * @param {React.Ref}  [ref]   — forwarded to the root Dropdown ref
- * @returns JSX
- *
- * Config schema:
- * {
- *   // Root props (all optional)
- *   displayMode?:          'scroll' | 'tab'
- *   defaultOpen?:          boolean
- *   defaultGroupExpanded?: boolean | 'first'
- *   hideOnSelection?:      boolean
- *   onEvent?:              ({ type, payload, prev }) => any
- *
- *   // Trigger
- *   trigger: ReactNode | string | {
- *     label:      string
- *     className?: string
- *     component?: ComponentType
- *   }
- *
- *   // Panel (optional — defaults used if omitted)
- *   panel?: {
- *     placement?: string   // default 'bottom-start'
- *     offset?:    number   // default 8
- *   }
- *
- *   // Navigation column (optional)
- *   navigation?: { ... }           // legacy alias for nav config
- *   items?: Array<{                // preferred alias for navigation.items
- *     id?:    string
- *     label:  string
- *     icon?:  ReactNode | FC
- *   }>
- *   showAll?:      boolean         // preferred alias for navigation.showAll
- *   allLabel?:     string
- *   allIcon?:      ReactNode | FC
- *   collapsed?:    boolean
- *   autoCollapse?: boolean
- *
- *   // Content column
- *   content: {
- *     searchPlaceholder?: string    // include search bar when provided
- *     sections: Array<{
- *       for?:   string              // matches navigation item id
- *       title?: string
- *       items?: Array<{
- *         id?:              string
- *         label?:           string
- *         defaultExpanded?: boolean
- *         items: Array<{
- *           id:               string
- *           label:            string
- *           type?:            'click' | 'checkbox'
- *           icon?:            ReactNode | FC
- *           defaultChecked?:  boolean
- *           checkIcon?:       ReactNode | FC
- *           component?:       ComponentType
- *         }>
- *       }>
- *     }>
- *   }
- * }
- */
-function renderFromConfig(config, ref) {
-  const {
-    rootConfig,
-    trigger,
-    panel,
-    navigation,
-    content
-  } = normalizeConfig(config);
-  const {
-    displayMode,
-    defaultOpen,
-    defaultGroupExpanded,
-    hideOnSelection,
-    onEvent,
-    ...rootRest
-  } = rootConfig;
-  const triggerNode = renderTriggerNode(trigger);
-  const navNode = renderNavigationNode(navigation);
-  const {
-    searchPlaceholder,
-    sections = [],
-    ...contentRest
-  } = content || {};
-  const contentNode = /*#__PURE__*/jsx(DropdownContent, {
-    searchPlaceholder: searchPlaceholder,
-    ...contentRest,
-    children: renderSectionNodes(sections)
-  });
-  const {
-    placement: panelPlacement,
-    offset: panelOffset,
-    ...panelRest
-  } = panel;
-  const panelChildren = /*#__PURE__*/jsxs(DropdownPanel, {
-    placement: panelPlacement,
-    offset: panelOffset,
-    ...panelRest,
-    children: [navNode, contentNode]
-  });
-  return /*#__PURE__*/jsxs(Dropdown$1, {
-    ref: ref,
-    displayMode: displayMode,
-    defaultOpen: defaultOpen,
-    defaultGroupExpanded: defaultGroupExpanded,
-    hideOnSelection: hideOnSelection,
-    onEvent: onEvent,
-    ...rootRest,
-    children: [triggerNode, panelChildren]
-  });
-}
-
-/**
  * buildFromConfig — builds only the panel children (trigger + panel).
  * Used internally by Dropdown root when `fromConfig` prop is passed.
  * Does NOT wrap with a root <Dropdown> — avoids circular imports.
@@ -3821,23 +3704,6 @@ function buildFromConfig(config) {
       })]
     })]
   });
-}
-
-/**
- * DropdownFromConfig — React component wrapper.
- * <DropdownFromConfig config={myConfig} />
- */
-const DropdownFromConfig = /*#__PURE__*/forwardRef(function DropdownFromConfig({
-  config
-}, ref) {
-  return renderFromConfig(config, ref);
-});
-
-/**
- * fromConfig(config, ref?) — imperative helper, returns JSX directly.
- */
-function fromConfig(config, ref) {
-  return renderFromConfig(config, ref);
 }
 
 const Dropdown$1 = /*#__PURE__*/forwardRef(function Dropdown({
@@ -4172,6 +4038,140 @@ const Dropdown$1 = /*#__PURE__*/forwardRef(function Dropdown({
     })
   });
 });
+
+/**
+ * fromConfig — render a full Dropdown tree from a plain JS config object.
+ *
+ * @param {object} config
+ * @param {React.Ref}  [ref]   — forwarded to the root Dropdown ref
+ * @returns JSX
+ *
+ * Config schema:
+ * {
+ *   // Root props (all optional)
+ *   displayMode?:          'scroll' | 'tab'
+ *   defaultOpen?:          boolean
+ *   defaultGroupExpanded?: boolean | 'first'
+ *   hideOnSelection?:      boolean
+ *   onEvent?:              ({ type, payload, prev }) => any
+ *
+ *   // Trigger
+ *   trigger: ReactNode | string | {
+ *     label:      string
+ *     className?: string
+ *     component?: ComponentType
+ *   }
+ *
+ *   // Panel (optional — defaults used if omitted)
+ *   panel?: {
+ *     placement?: string   // default 'bottom-start'
+ *     offset?:    number   // default 8
+ *   }
+ *
+ *   // Navigation column (optional)
+ *   navigation?: { ... }           // legacy alias for nav config
+ *   items?: Array<{                // preferred alias for navigation.items
+ *     id?:    string
+ *     label:  string
+ *     icon?:  ReactNode | FC
+ *   }>
+ *   showAll?:      boolean         // preferred alias for navigation.showAll
+ *   allLabel?:     string
+ *   allIcon?:      ReactNode | FC
+ *   collapsed?:    boolean
+ *   autoCollapse?: boolean
+ *
+ *   // Content column
+ *   content: {
+ *     searchPlaceholder?: string    // include search bar when provided
+ *     sections: Array<{
+ *       for?:   string              // matches navigation item id
+ *       title?: string
+ *       items?: Array<{
+ *         id?:              string
+ *         label?:           string
+ *         defaultExpanded?: boolean
+ *         items: Array<{
+ *           id:               string
+ *           label:            string
+ *           type?:            'click' | 'checkbox'
+ *           icon?:            ReactNode | FC
+ *           defaultChecked?:  boolean
+ *           checkIcon?:       ReactNode | FC
+ *           component?:       ComponentType
+ *         }>
+ *       }>
+ *     }>
+ *   }
+ * }
+ */
+function renderFromConfig(config, ref) {
+  const {
+    rootConfig,
+    trigger,
+    panel,
+    navigation,
+    content
+  } = normalizeConfig(config);
+  const {
+    displayMode,
+    defaultOpen,
+    defaultGroupExpanded,
+    hideOnSelection,
+    onEvent,
+    ...rootRest
+  } = rootConfig;
+  const triggerNode = renderTriggerNode(trigger);
+  const navNode = renderNavigationNode(navigation);
+  const {
+    searchPlaceholder,
+    sections = [],
+    ...contentRest
+  } = content || {};
+  const contentNode = /*#__PURE__*/jsx(DropdownContent, {
+    searchPlaceholder: searchPlaceholder,
+    ...contentRest,
+    children: renderSectionNodes(sections)
+  });
+  const {
+    placement: panelPlacement,
+    offset: panelOffset,
+    ...panelRest
+  } = panel;
+  const panelChildren = /*#__PURE__*/jsxs(DropdownPanel, {
+    placement: panelPlacement,
+    offset: panelOffset,
+    ...panelRest,
+    children: [navNode, contentNode]
+  });
+  return /*#__PURE__*/jsxs(Dropdown$1, {
+    ref: ref,
+    displayMode: displayMode,
+    defaultOpen: defaultOpen,
+    defaultGroupExpanded: defaultGroupExpanded,
+    hideOnSelection: hideOnSelection,
+    onEvent: onEvent,
+    ...rootRest,
+    children: [triggerNode, panelChildren]
+  });
+}
+
+/**
+ * DropdownFromConfig — React component wrapper.
+ * <DropdownFromConfig config={myConfig} />
+ */
+const DropdownFromConfig = /*#__PURE__*/forwardRef(function DropdownFromConfig({
+  config
+}, ref) {
+  return renderFromConfig(config, ref);
+});
+
+/**
+ * fromConfig(config, ref?) — imperative helper, returns JSX directly.
+ */
+function fromConfig(config, ref) {
+  return renderFromConfig(config, ref);
+}
 
 const Dropdown = Object.assign(Dropdown$1, {
   Trigger: DropdownTrigger,
