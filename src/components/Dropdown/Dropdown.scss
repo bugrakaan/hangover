@@ -416,6 +416,10 @@
       margin-bottom: 0;
     }
 
+    &.isCollapsed:last-child {
+      margin-bottom: 4px;
+    }
+
     &-header {
       display: flex;
       align-items: stretch;

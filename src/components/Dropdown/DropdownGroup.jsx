@@ -252,7 +252,7 @@ function DropdownGroup({
         onToggle={handleToggle}
         label={label}
         style={{ '--hangover-group-color': resolvedColor }}
-        className="hangoverDropdown-group"
+        className={`hangoverDropdown-group${isExpanded ? ' isExpanded' : ' isCollapsed'}`}
         {...rest}
       >
         {groupContent}
@@ -262,7 +262,7 @@ function DropdownGroup({
 
   return (
     <div
-      className="hangoverDropdown-group"
+      className={`hangoverDropdown-group${isExpanded ? ' isExpanded' : ' isCollapsed'}`}
       style={{ '--hangover-group-color': resolvedColor }}
       data-group-label={label}
       {...rest}
