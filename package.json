@@ -49,6 +49,7 @@
     "dev": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && rollup -c -w",
     "lint": "eslint \"src/**/*.{js,jsx}\"",
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx}\"",
+    "export": "node scripts/export-component.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
