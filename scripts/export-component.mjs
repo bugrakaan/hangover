@@ -15,7 +15,7 @@ import * as sass from 'sass'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '..')
 const srcDir = path.join(root, 'src')
-const outDir = path.join(root, 'export', 'hangover')
+const outDir = path.join(root, 'export', 'Hangover')
 
 // Folders under src/ that should not be exported.
 const EXCLUDE_DIRS = new Set(['stories', 'demo', 'assets'])
