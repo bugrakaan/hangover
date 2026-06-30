@@ -39,6 +39,7 @@
 
   --hangover-nav-width: 172px;
   --hangover-content-max-width: 240px;
+  --hangover-panel-nonav-width: 240px;
   --hangover-list-max-height: 280px;
   --hangover-transition: 330ms ease;
 }
@@ -119,7 +120,11 @@
 
     &.hasNoNav {
       min-width: unset;
-      width: 240px;
+      width: var(--hangover-panel-nonav-width);
+
+      .hangoverDropdown-column.forItems {
+        max-width: none;
+      }
     }
 
     &-inner {

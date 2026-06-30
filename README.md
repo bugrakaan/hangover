@@ -970,6 +970,7 @@ All visual properties are configurable via CSS custom properties:
   /* Layout */
   --hangover-nav-width: 172px;
   --hangover-content-max-width: 240px;
+  --hangover-panel-nonav-width: 240px;
   --hangover-list-max-height: 280px;
 
   --hangover-transition: 330ms ease;

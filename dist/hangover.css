@@ -27,6 +27,7 @@
     0 2px 4px 0 rgba(37, 45, 91, 0.04);
   --hangover-nav-width: 172px;
   --hangover-content-max-width: 240px;
+  --hangover-panel-nonav-width: 240px;
   --hangover-list-max-height: 280px;
   --hangover-transition: 330ms ease;
 }
@@ -96,7 +97,10 @@
 }
 .hangoverDropdown-panel.hasNoNav {
   min-width: unset;
-  width: 240px;
+  width: var(--hangover-panel-nonav-width);
+}
+.hangoverDropdown-panel.hasNoNav .hangoverDropdown-column.forItems {
+  max-width: none;
 }
 .hangoverDropdown-panel-inner {
   display: flex;
