@@ -561,7 +561,9 @@
     }
 
     &:focus-visible {
-      box-shadow: 0 0 0 2px var(--hangover-color-focus);
+      background: var(--hangover-color-bg-hover);
+      box-shadow: none;
+      outline: none;
     }
 
     &.isSelected {

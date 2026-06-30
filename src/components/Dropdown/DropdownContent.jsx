@@ -1,4 +1,4 @@
-import { useEffect, Children } from 'react';
+import { useEffect, useRef, Children } from 'react';
 import { useDropdownContext } from '../../context/DropdownContext';
 
 // Default search icon (inline SVG)
@@ -25,6 +25,7 @@ function DefaultSearchIcon() {
  */
 function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to show here', component: Comp, children, ...rest }) {
   const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, t } = useDropdownContext();
+  const searchInputRef = useRef(null);
 
   // Scroll spy: update active nav based on scroll position
   useEffect(() => {
@@ -74,6 +75,68 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     fireEvent('search', { query: e.target.value });
   }
 
+  // Keyboard navigation: ArrowDown/ArrowUp move focus across the currently
+  // visible items (works before and after searching, since filtered items
+  // are removed from the DOM). Enter is handled by each item itself.
+  function scrollItemIntoView(el) {
+    const list = contentRef.current;
+    if (!list || !el) return;
+
+    // Offset by the sticky section header so the item stays fully visible
+    // when navigating upwards.
+    const stickyEl = list.querySelector('.hangoverDropdown-section-title');
+    const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
+
+    const listRect = list.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+
+    let delta = 0;
+    if (elRect.top < listRect.top + stickyHeight) {
+      delta = elRect.top - (listRect.top + stickyHeight);
+    } else if (elRect.bottom > listRect.bottom) {
+      delta = elRect.bottom - listRect.bottom;
+    }
+
+    if (delta !== 0) {
+      list.scrollTo({ top: list.scrollTop + delta, behavior: 'smooth' });
+    }
+  }
+
+  function moveItemFocus(direction) {
+    const list = contentRef.current;
+    if (!list) return;
+    const items = Array.from(list.querySelectorAll('.hangoverDropdown-item'))
+      .filter((el) => el.offsetParent !== null);
+    if (items.length === 0) return;
+
+    const active = document.activeElement;
+    const idx = items.indexOf(active);
+
+    if (direction === 1) {
+      const next = idx < 0 ? items[0] : items[idx + 1];
+      if (next) {
+        next.focus({ preventScroll: true });
+        scrollItemIntoView(next);
+      }
+    } else if (idx > 0) {
+      const prev = items[idx - 1];
+      prev.focus({ preventScroll: true });
+      scrollItemIntoView(prev);
+    } else if (idx === 0 && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }
+
+  function handleKeyNav(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveItemFocus(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveItemFocus(-1);
+    }
+  }
+
   const isEmpty = Children.count(children) === 0;
 
   const inner = (
@@ -90,10 +153,12 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
             aria-label={t(searchPlaceholder)}
             value={searchQuery}
             onChange={handleSearch}
+            onKeyDown={handleKeyNav}
+            ref={searchInputRef}
           />
         </label>
       )}
-      <div role="listbox" className={`hangoverDropdown-list${displayMode === 'tab' ? ' isTabMode' : ''}${displayMode === 'tab' && activeNavId === '__all__' ? ' isAllActive' : ''}`} ref={contentRef}>
+      <div role="listbox" className={`hangoverDropdown-list${displayMode === 'tab' ? ' isTabMode' : ''}${displayMode === 'tab' && activeNavId === '__all__' ? ' isAllActive' : ''}`} ref={contentRef} onKeyDown={handleKeyNav}>
         {isEmpty ? (
           <div className="hangoverDropdown-content-empty">{t(emptyText)}</div>
         ) : children}
