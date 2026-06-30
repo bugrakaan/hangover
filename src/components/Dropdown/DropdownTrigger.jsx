@@ -8,7 +8,7 @@ import { useDropdownContext } from '../../context/DropdownContext';
  * Injects: ref, onClick, aria-expanded, aria-haspopup
  */
 function DropdownTrigger({ children }) {
-  const { triggerRef, isOpen, fireEvent } = useDropdownContext();
+  const { triggerRef, isOpen, fireEvent, t } = useDropdownContext();
 
   const child = Children.only(children);
 
@@ -21,12 +21,19 @@ function DropdownTrigger({ children }) {
     child.props.onClick?.(e);
   }
 
-  return cloneElement(child, {
-    ref: triggerRef,
-    onClick: handleClick,
-    'aria-expanded': isOpen,
-    'aria-haspopup': 'dialog',
-  });
+  const childChildren = child.props.children;
+  const translatedChildren = typeof childChildren === 'string' ? t(childChildren) : childChildren;
+
+  return cloneElement(
+    child,
+    {
+      ref: triggerRef,
+      onClick: handleClick,
+      'aria-expanded': isOpen,
+      'aria-haspopup': 'dialog',
+    },
+    translatedChildren,
+  );
 }
 
 export default DropdownTrigger;

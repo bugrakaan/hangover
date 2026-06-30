@@ -64,12 +64,13 @@ function DropdownPanel({ placement = 'bottom-start', offset = 8, title, anchor, 
       placement={actualPlacement}
       style={style}
       className={classNames}
+      title={t(title)}
       {...rest}
     >
       {children}
     </Comp>
   ) : (
-    <div ref={panelRef} className={classNames} style={style} role="dialog" aria-modal="true" aria-label="Dropdown" {...rest}>
+    <div ref={panelRef} className={classNames} style={style} role="dialog" aria-modal="true" aria-label={t('Dropdown')} {...rest}>
       {title && <div className="hangoverDropdown-panel-title">{t(title)}</div>}
       <div className="hangoverDropdown-panel-inner">
         {children}

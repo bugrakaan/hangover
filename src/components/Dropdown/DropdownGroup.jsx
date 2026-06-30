@@ -179,11 +179,11 @@ function DropdownGroup({
   const visibleItemIds = useMemo(() => {
     const searchableItems = Children.toArray(children).map(child => ({
       id: child?.props?.id,
-      label: typeof child?.props?.children === 'string' ? child.props.children : '',
+      label: typeof child?.props?.children === 'string' ? t(child.props.children) : '',
     }));
 
     return getMatchingItemIds(searchableItems, searchQuery);
-  }, [children, searchQuery]);
+  }, [children, searchQuery, t]);
 
   const groupContextValue = { groupLabel: label, groupId, resolvedColor, visibleItemIds };
 

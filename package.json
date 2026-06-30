@@ -1,6 +1,6 @@
 {
   "name": "@diabolic/hangover",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A headless-style, compound React dropdown/field-picker component library",
   "license": "MIT",
   "author": "bugrakaan",

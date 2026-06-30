@@ -30,7 +30,8 @@ function DropdownTrigger({
   const {
     triggerRef,
     isOpen,
-    fireEvent
+    fireEvent,
+    t
   } = useDropdownContext();
   const child = Children.only(children);
   function handleClick(e) {
@@ -45,12 +46,14 @@ function DropdownTrigger({
     }
     child.props.onClick?.(e);
   }
+  const childChildren = child.props.children;
+  const translatedChildren = typeof childChildren === 'string' ? t(childChildren) : childChildren;
   return /*#__PURE__*/cloneElement(child, {
     ref: triggerRef,
     onClick: handleClick,
     'aria-expanded': isOpen,
     'aria-haspopup': 'dialog'
-  });
+  }, translatedChildren);
 }
 
 /**
@@ -389,6 +392,7 @@ function DropdownPanel({
     placement: actualPlacement,
     style: style,
     className: classNames,
+    title: t(title),
     ...rest,
     children: children
   }) : /*#__PURE__*/jsxs("div", {
@@ -397,7 +401,7 @@ function DropdownPanel({
     style: style,
     role: "dialog",
     "aria-modal": "true",
-    "aria-label": "Dropdown",
+    "aria-label": t('Dropdown'),
     ...rest,
     children: [title && /*#__PURE__*/jsx("div", {
       className: "hangoverDropdown-panel-title",
@@ -3364,10 +3368,10 @@ function DropdownGroup({
   const visibleItemIds = useMemo(() => {
     const searchableItems = Children.toArray(children).map(child => ({
       id: child?.props?.id,
-      label: typeof child?.props?.children === 'string' ? child.props.children : ''
+      label: typeof child?.props?.children === 'string' ? t(child.props.children) : ''
     }));
     return getMatchingItemIds(searchableItems, searchQuery);
-  }, [children, searchQuery]);
+  }, [children, searchQuery, t]);
   const groupContextValue = {
     groupLabel: label,
     groupId,
