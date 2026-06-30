@@ -339,6 +339,9 @@
 .hangoverDropdown-group:last-child {
   margin-bottom: 0;
 }
+.hangoverDropdown-group.isCollapsed:last-child {
+  margin-bottom: 4px;
+}
 .hangoverDropdown-group-header {
   display: flex;
   align-items: stretch;

@@ -77,6 +77,7 @@ Root provider. All state lives here.
 | `darkMode` | `boolean` | `false` | Enable dark mode. Applies `hangoverDropdown--dark` CSS class which overrides all color tokens. |
 | `searchQuery` | `string` | — | Controlled search query. When provided, the internal search state is kept in sync with this value. Use together with `onEvent` (`type: "search"`) to handle changes. |
 | `defaultSearchQuery` | `string` | `""` | Uncontrolled initial search query. Only applied on first render. |
+| `useTranslationFunction` | `(text, payload?) => string` | — | Translation hook. When provided, **every** user-facing string — including built-in defaults — is routed through this function. See [Translation](#translation). |
 | `onEvent` | `(event) => any` | — | Central event handler. See [Events](#events). |
 | `ref` | `React.Ref` | — | Exposes imperative API. See [Imperative API](#imperative-api). |
 | `...rest` | `any` | — | Any additional props (e.g. `data-*`, `className`, `style`) are forwarded to the root `<div>`. |
@@ -274,6 +275,7 @@ const config = {
   defaultGroupExpanded: boolean | 'first',
   hideOnSelection: boolean,
   onEvent: ({ type, payload, prev }) => any,
+  useTranslationFunction: (text, payload) => string,
   // ...any extra props are spread onto <Dropdown>
 
   // Trigger — required
@@ -485,6 +487,58 @@ trigger.addEventListener('HO:select', (e) => {
   console.log(e.detail) // { payload, prev }
 })
 ```
+
+---
+
+## Translation
+
+Pass a `useTranslationFunction` to `<Dropdown>` to localize the UI. When
+provided, **every** user-facing string is routed through it — including
+built-in defaults like `"Search"`, `"Select all"`, `"No results"` and
+`"Nothing to show here"`, as well as your own labels (group names, item
+labels, nav items, section/panel titles).
+
+The function receives the original string and returns the translated one:
+
+```jsx
+const translations = {
+  'Search': 'Ara',
+  'Select all': 'Tümünü seç',
+  'No results': 'Sonuç yok',
+  'Nothing to show here': 'Gösterilecek bir şey yok',
+  'Fruits': 'Meyveler',
+  'Apple': 'Elma',
+}
+
+<Dropdown useTranslationFunction={(text) => translations[text] ?? text}>
+  {/* ... */}
+</Dropdown>
+```
+
+### Dynamic values
+
+When a string contains dynamic values, they are passed as a payload object
+in the **second argument** instead of being concatenated into the string.
+The default string uses `{placeholder}` tokens that map to payload keys:
+
+```jsx
+<Dropdown
+  useTranslationFunction={(text, payload) => {
+    // e.g. text = "{label} — {action}", payload = { label: "Fruits", action: "collapse" }
+    if (text === '{label} — {action}') {
+      return `${payload.label}: ${payload.action === 'collapse' ? 'kapat' : 'aç'}`
+    }
+    return translations[text] ?? text
+  }}
+>
+  {/* ... */}
+</Dropdown>
+```
+
+If no `useTranslationFunction` is provided, strings render as-is and any
+`{placeholder}` tokens are interpolated from the payload automatically.
+
+> Also available via [`fromConfig`](#fromconfig--config-driven-rendering) as `useTranslationFunction`.
 
 ---
 

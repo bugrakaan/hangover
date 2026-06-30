@@ -21,6 +21,7 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
     contentRef,
     sectionRefs,
     registerNavLabel,
+    t,
   } = useDropdownContext();
 
   const isActive = activeNavId === id;
@@ -65,7 +66,7 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
       type="button"
       className={`hangoverDropdown-nav-item${isActive ? ' isActive' : ''}`}
       onClick={() => { handleClick(); userOnClick?.(); }}
-      title={typeof children === 'string' ? children : undefined}
+      title={typeof children === 'string' ? t(children) : undefined}
       data-ho-active={isActive}
       {...navItemRest}
     >
@@ -74,7 +75,7 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
           {renderIcon(icon)}
         </span>
       )}
-      <span className="hangoverDropdown-nav-item-label">{children}</span>
+      <span className="hangoverDropdown-nav-item-label">{typeof children === 'string' ? t(children) : children}</span>
     </button>
   );
 }

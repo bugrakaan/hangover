@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, Children } from 'react';
 import { useDropdownContext } from '../../context/DropdownContext';
 
 // Default search icon (inline SVG)
@@ -17,12 +17,14 @@ function DefaultSearchIcon() {
  *
  * Props:
  *  searchPlaceholder  string (default "Search")
+ *  emptyText          string (default "Nothing to show here") — shown when
+ *                     Content has no children; the search bar is hidden too
  *  title              string — overrides active nav label as section title
  *  component          custom wrapper component
  *  children           DropdownSection / DropdownGroup / DropdownItem elements
  */
-function DropdownContent({ searchPlaceholder = 'Search', component: Comp, children, ...rest }) {
-  const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive } = useDropdownContext();
+function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to show here', component: Comp, children, ...rest }) {
+  const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, t } = useDropdownContext();
 
   // Scroll spy: update active nav based on scroll position
   useEffect(() => {
@@ -72,23 +74,29 @@ function DropdownContent({ searchPlaceholder = 'Search', component: Comp, childr
     fireEvent('search', { query: e.target.value });
   }
 
+  const isEmpty = Children.count(children) === 0;
+
   const inner = (
     <>
-      <label className="hangoverDropdown-search">
-        <span className="hangoverDropdown-search-icon">
-          <DefaultSearchIcon />
-        </span>
-        <input
-          type="text"
-          className="hangoverDropdown-search-input"
-          placeholder={searchPlaceholder}
-          aria-label={searchPlaceholder}
-          value={searchQuery}
-          onChange={handleSearch}
-        />
-      </label>
+      {!isEmpty && (
+        <label className="hangoverDropdown-search">
+          <span className="hangoverDropdown-search-icon">
+            <DefaultSearchIcon />
+          </span>
+          <input
+            type="text"
+            className="hangoverDropdown-search-input"
+            placeholder={t(searchPlaceholder)}
+            aria-label={t(searchPlaceholder)}
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+        </label>
+      )}
       <div role="listbox" className={`hangoverDropdown-list${displayMode === 'tab' ? ' isTabMode' : ''}${displayMode === 'tab' && activeNavId === '__all__' ? ' isAllActive' : ''}`} ref={contentRef}>
-        {children}
+        {isEmpty ? (
+          <div className="hangoverDropdown-content-empty">{t(emptyText)}</div>
+        ) : children}
       </div>
     </>
   );

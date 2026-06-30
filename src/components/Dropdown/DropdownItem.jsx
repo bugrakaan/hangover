@@ -40,6 +40,7 @@ function DropdownItem({
     checkedItems,
     searchQuery,
     fireEvent,
+    t,
   } = useDropdownContext();
 
   const groupCtx = useContext(GroupContext);
@@ -75,7 +76,7 @@ function DropdownItem({
     if (type === 'checkbox') {
       fireEvent('check', { id, label, groupId, groupLabel });
     } else {
-      fireEvent('select', { id, label, groupLabel });
+      fireEvent('select', { id, label, groupId, groupLabel });
     }
   }
 
@@ -127,7 +128,7 @@ function DropdownItem({
       aria-checked={type === 'checkbox' ? isChecked : undefined}
       tabIndex={0}
       className={classNames}
-      title={label || undefined}
+      title={label ? t(label) : undefined}
       onClick={() => { handleClick(); userOnClick?.(); }}
       onKeyDown={(e) => { handleKeyDown(e); userOnKeyDown?.(e); }}
       data-ho-selected={isSelected}
@@ -139,7 +140,7 @@ function DropdownItem({
           {renderIcon(icon)}
         </span>
       )}
-      <span className="hangoverDropdown-item-label">{children}</span>
+      <span className="hangoverDropdown-item-label">{typeof children === 'string' ? t(children) : children}</span>
       {actionsNode && (
         <span
           className="hangoverDropdown-item-actions"

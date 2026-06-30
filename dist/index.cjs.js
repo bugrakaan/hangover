@@ -342,6 +342,7 @@ function useOutsideClick(refs, callback) {
 function DropdownPanel({
   placement = 'bottom-start',
   offset = 8,
+  title,
   anchor,
   component: Comp,
   children,
@@ -353,7 +354,8 @@ function DropdownPanel({
     triggerRef,
     fireEvent,
     hasNav,
-    darkMode
+    darkMode,
+    t
   } = useDropdownContext();
   const panelRef = react.useRef(null);
   const anchorRef = anchor ?? triggerRef;
@@ -393,7 +395,7 @@ function DropdownPanel({
     className: classNames,
     ...rest,
     children: children
-  }) : /*#__PURE__*/jsxRuntime.jsx("div", {
+  }) : /*#__PURE__*/jsxRuntime.jsxs("div", {
     ref: panelRef,
     className: classNames,
     style: style,
@@ -401,10 +403,13 @@ function DropdownPanel({
     "aria-modal": "true",
     "aria-label": "Dropdown",
     ...rest,
-    children: /*#__PURE__*/jsxRuntime.jsx("div", {
+    children: [title && /*#__PURE__*/jsxRuntime.jsx("div", {
+      className: "hangoverDropdown-panel-title",
+      children: t(title)
+    }), /*#__PURE__*/jsxRuntime.jsx("div", {
       className: "hangoverDropdown-panel-inner",
       children: children
-    })
+    })]
   });
   return /*#__PURE__*/reactDom.createPortal(content, document.body);
 }
@@ -437,7 +442,8 @@ function DropdownNavItem({
     displayMode,
     contentRef,
     sectionRefs,
-    registerNavLabel
+    registerNavLabel,
+    t
   } = useDropdownContext();
   const isActive = activeNavId === id;
   react.useEffect(() => {
@@ -493,7 +499,7 @@ function DropdownNavItem({
       handleClick();
       userOnClick?.();
     },
-    title: typeof children === 'string' ? children : undefined,
+    title: typeof children === 'string' ? t(children) : undefined,
     "data-ho-active": isActive,
     ...navItemRest,
     children: [icon && /*#__PURE__*/jsxRuntime.jsx("span", {
@@ -502,7 +508,7 @@ function DropdownNavItem({
       children: renderIcon(icon)
     }), /*#__PURE__*/jsxRuntime.jsx("span", {
       className: "hangoverDropdown-nav-item-label",
-      children: children
+      children: typeof children === 'string' ? t(children) : children
     })]
   });
 }
@@ -615,12 +621,15 @@ function DefaultSearchIcon() {
  *
  * Props:
  *  searchPlaceholder  string (default "Search")
+ *  emptyText          string (default "Nothing to show here") — shown when
+ *                     Content has no children; the search bar is hidden too
  *  title              string — overrides active nav label as section title
  *  component          custom wrapper component
  *  children           DropdownSection / DropdownGroup / DropdownItem elements
  */
 function DropdownContent({
   searchPlaceholder = 'Search',
+  emptyText = 'Nothing to show here',
   component: Comp,
   children,
   ...rest
@@ -631,7 +640,8 @@ function DropdownContent({
     contentRef,
     displayMode,
     activeNavId,
-    setScrollSpyActive
+    setScrollSpyActive,
+    t
   } = useDropdownContext();
 
   // Scroll spy: update active nav based on scroll position
@@ -686,8 +696,9 @@ function DropdownContent({
       query: e.target.value
     });
   }
+  const isEmpty = react.Children.count(children) === 0;
   const inner = /*#__PURE__*/jsxRuntime.jsxs(jsxRuntime.Fragment, {
-    children: [/*#__PURE__*/jsxRuntime.jsxs("label", {
+    children: [!isEmpty && /*#__PURE__*/jsxRuntime.jsxs("label", {
       className: "hangoverDropdown-search",
       children: [/*#__PURE__*/jsxRuntime.jsx("span", {
         className: "hangoverDropdown-search-icon",
@@ -695,8 +706,8 @@ function DropdownContent({
       }), /*#__PURE__*/jsxRuntime.jsx("input", {
         type: "text",
         className: "hangoverDropdown-search-input",
-        placeholder: searchPlaceholder,
-        "aria-label": searchPlaceholder,
+        placeholder: t(searchPlaceholder),
+        "aria-label": t(searchPlaceholder),
         value: searchQuery,
         onChange: handleSearch
       })]
@@ -704,7 +715,10 @@ function DropdownContent({
       role: "listbox",
       className: `hangoverDropdown-list${displayMode === 'tab' ? ' isTabMode' : ''}${displayMode === 'tab' && activeNavId === '__all__' ? ' isAllActive' : ''}`,
       ref: contentRef,
-      children: children
+      children: isEmpty ? /*#__PURE__*/jsxRuntime.jsx("div", {
+        className: "hangoverDropdown-content-empty",
+        children: t(emptyText)
+      }) : children
     })]
   });
   if (Comp) {
@@ -734,7 +748,8 @@ function DropdownSection({
     activeNavId,
     displayMode,
     registerSectionRef,
-    hasNav
+    hasNav,
+    t
   } = useDropdownContext();
   const sectionRef = react.useRef(null);
   const forId = forProp || forIdProp || '__all__';
@@ -799,7 +814,7 @@ function DropdownSection({
         children: [title && hasNav && !(displayMode === 'tab' && activeNavId === '__all__') && /*#__PURE__*/jsxRuntime.jsx("div", {
           className: `hangoverDropdown-section-title${hasGroups ? ' isClickable' : ''}`,
           onClick: hasGroups ? handleToggleAll : undefined,
-          "aria-label": hasGroups ? allExpanded ? 'Collapse all groups' : 'Expand all groups' : undefined,
+          "aria-label": hasGroups ? allExpanded ? t('Collapse all groups') : t('Expand all groups') : undefined,
           role: hasGroups ? 'button' : undefined,
           tabIndex: hasGroups ? 0 : undefined,
           onKeyDown: hasGroups ? e => {
@@ -809,7 +824,7 @@ function DropdownSection({
             }
           } : undefined,
           children: /*#__PURE__*/jsxRuntime.jsx("span", {
-            children: title
+            children: t(title)
           })
         }), children]
       })
@@ -3025,7 +3040,8 @@ function DropdownItem({
     selectedItem,
     checkedItems,
     searchQuery,
-    fireEvent
+    fireEvent,
+    t
   } = useDropdownContext();
   const groupCtx = react.useContext(GroupContext);
   const groupLabel = groupCtx?.groupLabel ?? '';
@@ -3063,6 +3079,7 @@ function DropdownItem({
       fireEvent('select', {
         id,
         label,
+        groupId,
         groupLabel
       });
     }
@@ -3113,7 +3130,7 @@ function DropdownItem({
     "aria-checked": type === 'checkbox' ? isChecked : undefined,
     tabIndex: 0,
     className: classNames,
-    title: label || undefined,
+    title: label ? t(label) : undefined,
     onClick: () => {
       handleClick();
       userOnClick?.();
@@ -3130,7 +3147,7 @@ function DropdownItem({
       children: renderIcon(icon)
     }), /*#__PURE__*/jsxRuntime.jsx("span", {
       className: "hangoverDropdown-item-label",
-      children: children
+      children: typeof children === 'string' ? t(children) : children
     }), actionsNode && /*#__PURE__*/jsxRuntime.jsx("span", {
       className: "hangoverDropdown-item-actions",
       onClick: e => e.stopPropagation(),
@@ -3229,7 +3246,8 @@ function DropdownGroup({
     displayMode,
     activeNavId,
     registerGroupItems,
-    searchQuery
+    searchQuery,
+    t
   } = useDropdownContext();
 
   // Determine initial expanded state
@@ -3318,7 +3336,7 @@ function DropdownGroup({
     role: "checkbox",
     "aria-checked": selectAllChecked,
     tabIndex: 0,
-    title: "Select all",
+    title: t('Select all'),
     className: `hangoverDropdown-item isCheckboxType${selectAllChecked ? ' isChecked' : ''}`,
     onClick: handleSelectAll,
     onKeyDown: e => {
@@ -3329,7 +3347,7 @@ function DropdownGroup({
     },
     children: [/*#__PURE__*/jsxRuntime.jsx("span", {
       className: "hangoverDropdown-item-label",
-      children: "Select all"
+      children: t('Select all')
     }), /*#__PURE__*/jsxRuntime.jsx("span", {
       className: `hangoverDropdown-item-check-icon${selectAllChecked ? ' isVisible' : ''}`,
       children: selectAllChecked && /*#__PURE__*/jsxRuntime.jsx("svg", {
@@ -3371,8 +3389,11 @@ function DropdownGroup({
       }
     },
     "aria-expanded": isExpanded,
-    "aria-label": `${label} — ${isExpanded ? 'collapse' : 'expand'}`,
-    title: label,
+    "aria-label": t('{label} — {action}', {
+      label,
+      action: t(isExpanded ? 'collapse' : 'expand')
+    }),
+    title: t(label),
     children: [/*#__PURE__*/jsxRuntime.jsx("div", {
       className: "hangoverDropdown-group-header-accent"
     }), /*#__PURE__*/jsxRuntime.jsx("div", {
@@ -3384,7 +3405,7 @@ function DropdownGroup({
           children: renderIcon(icon)
         }), /*#__PURE__*/jsxRuntime.jsx("span", {
           className: "hangoverDropdown-group-header-label",
-          children: label
+          children: t(label)
         }), /*#__PURE__*/jsxRuntime.jsx("span", {
           className: "hangoverDropdown-group-header-chevron",
           children: /*#__PURE__*/jsxRuntime.jsx(Chevron, {})
@@ -3398,14 +3419,14 @@ function DropdownGroup({
     className: `hangoverDropdown-group-items-wrap${isExpanded ? ' isExpanded' : ''}`,
     children: /*#__PURE__*/jsxRuntime.jsxs("div", {
       role: "group",
-      "aria-label": label,
+      "aria-label": t(label),
       className: "hangoverDropdown-group-items",
       children: [showSelectAll && selectAllPosition === 'top' && selectAllItem, hasChildren ? hasVisibleItems ? children : /*#__PURE__*/jsxRuntime.jsx("div", {
         className: "hangoverDropdown-group-empty",
-        children: noResultsText
+        children: t(noResultsText)
       }) : /*#__PURE__*/jsxRuntime.jsx("div", {
         className: "hangoverDropdown-group-empty",
-        children: emptyText
+        children: t(emptyText)
       }), showSelectAll && selectAllPosition === 'bottom' && selectAllItem]
     })
   });
@@ -3421,13 +3442,13 @@ function DropdownGroup({
       style: {
         '--hangover-group-color': resolvedColor
       },
-      className: "hangoverDropdown-group",
+      className: `hangoverDropdown-group${isExpanded ? ' isExpanded' : ' isCollapsed'}`,
       ...rest,
       children: groupContent
     });
   }
   return /*#__PURE__*/jsxRuntime.jsx("div", {
-    className: "hangoverDropdown-group",
+    className: `hangoverDropdown-group${isExpanded ? ' isExpanded' : ' isCollapsed'}`,
     style: {
       '--hangover-group-color': resolvedColor
     },
@@ -3717,9 +3738,10 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
   hideOnSelection: hideOnSelectionProp = true,
   onEvent: onEventProp,
   fromConfig,
-  darkMode = false,
+  darkMode: darkModeProp = false,
   searchQuery: searchQueryProp,
-  defaultSearchQuery = '',
+  defaultSearchQuery: defaultSearchQueryProp = '',
+  useTranslationFunction: useTranslationFunctionProp,
   children,
   ...rest
 }, ref) {
@@ -3728,6 +3750,23 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
   const defaultGroupExpanded = fromConfig?.defaultGroupExpanded ?? defaultGroupExpandedProp;
   const hideOnSelection = fromConfig?.hideOnSelection ?? hideOnSelectionProp;
   const onEvent = fromConfig?.onEvent ?? onEventProp;
+  const darkMode = fromConfig?.darkMode ?? darkModeProp;
+  const defaultSearchQuery = fromConfig?.defaultSearchQuery ?? defaultSearchQueryProp;
+  const controlledSearchQuery = fromConfig?.searchQuery ?? searchQueryProp;
+  const translationFn = fromConfig?.useTranslationFunction ?? useTranslationFunctionProp;
+
+  // Translation helper. Every user-facing string is routed through this.
+  // - With a translation function: returns translationFn(str, payload).
+  // - Without one: returns the string, interpolating any {placeholder}
+  //   tokens from the optional payload object.
+  const t = react.useCallback((str, payload) => {
+    if (typeof str !== 'string') return str;
+    if (typeof translationFn === 'function') return translationFn(str, payload);
+    if (payload) {
+      return str.replace(/\{(\w+)\}/g, (match, key) => key in payload ? payload[key] : match);
+    }
+    return str;
+  }, [translationFn]);
   const [isOpen, setIsOpen] = react.useState(defaultOpen);
   const [selectedItem, setSelectedItem] = react.useState(null);
   const [checkedItems, setCheckedItems] = react.useState(() => new Map());
@@ -3737,10 +3776,10 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
   const [hasNav, setHasNav] = react.useState(false);
 
   // Controlled searchQuery — sync internal state whenever the prop changes
-  const isControlledSearch = searchQueryProp !== undefined;
+  const isControlledSearch = controlledSearchQuery !== undefined;
   react.useEffect(() => {
-    if (isControlledSearch) setSearchQuery(searchQueryProp);
-  }, [isControlledSearch, searchQueryProp]);
+    if (isControlledSearch) setSearchQuery(controlledSearchQuery);
+  }, [isControlledSearch, controlledSearchQuery]);
   const triggerRef = react.useRef(null);
   const contentRef = react.useRef(null); // scroll container inside DropdownContent
   const firstGroupClaimedRef = react.useRef(false);
@@ -4005,6 +4044,8 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
     hasNav,
     darkMode,
     setHasNav,
+    // i18n
+    t,
     // Refs
     triggerRef,
     contentRef,
@@ -4024,7 +4065,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
     registerSectionRef
   }), [isOpen, selectedItem, checkedItems, activeNavId, activeNavLabel, searchQuery, hasNav, displayMode, defaultGroupExpanded, darkMode,
   // all others are stable references
-  fireEvent, registerGroupItems, setScrollSpyActive, registerNavLabel, registerSectionRef]);
+  fireEvent, registerGroupItems, setScrollSpyActive, registerNavLabel, registerSectionRef, t]);
   const resolvedChildren = (() => {
     if (fromConfig && children) {
       console.warn('[Dropdown] `fromConfig` and `children` cannot be used together. ' + '`fromConfig` takes precedence — `children` will be ignored.');

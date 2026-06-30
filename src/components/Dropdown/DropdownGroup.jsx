@@ -66,7 +66,7 @@ function DropdownGroup({
   children,
   ...rest
 }) {
-  const { fireEvent, checkedItems, firstGroupClaimedRef, defaultGroupExpanded, displayMode, activeNavId, registerGroupItems, searchQuery } = useDropdownContext();
+  const { fireEvent, checkedItems, firstGroupClaimedRef, defaultGroupExpanded, displayMode, activeNavId, registerGroupItems, searchQuery, t } = useDropdownContext();
 
   // Determine initial expanded state
   const expandedInitRef = useRef(null);
@@ -160,12 +160,12 @@ function DropdownGroup({
       role="checkbox"
       aria-checked={selectAllChecked}
       tabIndex={0}
-      title="Select all"
+      title={t('Select all')}
       className={`hangoverDropdown-item isCheckboxType${selectAllChecked ? ' isChecked' : ''}`}
       onClick={handleSelectAll}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectAll(); } }}
     >
-      <span className="hangoverDropdown-item-label">Select all</span>
+      <span className="hangoverDropdown-item-label">{t('Select all')}</span>
       <span className={`hangoverDropdown-item-check-icon${selectAllChecked ? ' isVisible' : ''}`}>
         {selectAllChecked && (
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -199,8 +199,8 @@ function DropdownGroup({
         }
       }}
       aria-expanded={isExpanded}
-      aria-label={`${label} — ${isExpanded ? 'collapse' : 'expand'}`}
-      title={label}
+      aria-label={t('{label} — {action}', { label, action: t(isExpanded ? 'collapse' : 'expand') })}
+      title={t(label)}
     >
       <div className="hangoverDropdown-group-header-accent" />
       <div className="hangoverDropdown-group-header-body">
@@ -210,7 +210,7 @@ function DropdownGroup({
                 {renderIcon(icon)}
               </span>
             )}
-            <span className="hangoverDropdown-group-header-label">{label}</span>
+            <span className="hangoverDropdown-group-header-label">{t(label)}</span>
           <span className="hangoverDropdown-group-header-chevron">
             <Chevron />
           </span>
@@ -225,13 +225,13 @@ function DropdownGroup({
 
   const items = (
     <div className={`hangoverDropdown-group-items-wrap${isExpanded ? ' isExpanded' : ''}`}>
-      <div role="group" aria-label={label} className="hangoverDropdown-group-items">
+      <div role="group" aria-label={t(label)} className="hangoverDropdown-group-items">
         {showSelectAll && selectAllPosition === 'top' && selectAllItem}
         {hasChildren
           ? hasVisibleItems
             ? children
-            : <div className="hangoverDropdown-group-empty">{noResultsText}</div>
-          : <div className="hangoverDropdown-group-empty">{emptyText}</div>
+            : <div className="hangoverDropdown-group-empty">{t(noResultsText)}</div>
+          : <div className="hangoverDropdown-group-empty">{t(emptyText)}</div>
         }
         {showSelectAll && selectAllPosition === 'bottom' && selectAllItem}
       </div>

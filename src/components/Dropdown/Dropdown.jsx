@@ -31,9 +31,10 @@ const Dropdown = forwardRef(function Dropdown(
     hideOnSelection: hideOnSelectionProp = true,
     onEvent: onEventProp,
     fromConfig,
-    darkMode = false,
+    darkMode: darkModeProp = false,
     searchQuery: searchQueryProp,
-    defaultSearchQuery = '',
+    defaultSearchQuery: defaultSearchQueryProp = '',
+    useTranslationFunction: useTranslationFunctionProp,
     children,
     ...rest
   },
@@ -44,6 +45,24 @@ const Dropdown = forwardRef(function Dropdown(
   const defaultGroupExpanded = fromConfig?.defaultGroupExpanded ?? defaultGroupExpandedProp;
   const hideOnSelection = fromConfig?.hideOnSelection ?? hideOnSelectionProp;
   const onEvent = fromConfig?.onEvent ?? onEventProp;
+  const darkMode = fromConfig?.darkMode ?? darkModeProp;
+  const defaultSearchQuery = fromConfig?.defaultSearchQuery ?? defaultSearchQueryProp;
+  const controlledSearchQuery = fromConfig?.searchQuery ?? searchQueryProp;
+  const translationFn = fromConfig?.useTranslationFunction ?? useTranslationFunctionProp;
+
+  // Translation helper. Every user-facing string is routed through this.
+  // - With a translation function: returns translationFn(str, payload).
+  // - Without one: returns the string, interpolating any {placeholder}
+  //   tokens from the optional payload object.
+  const t = useCallback((str, payload) => {
+    if (typeof str !== 'string') return str;
+    if (typeof translationFn === 'function') return translationFn(str, payload);
+    if (payload) {
+      return str.replace(/\{(\w+)\}/g, (match, key) => (key in payload ? payload[key] : match));
+    }
+    return str;
+  }, [translationFn]);
+
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [selectedItem, setSelectedItem] = useState(null);
   const [checkedItems, setCheckedItems] = useState(() => new Map());
@@ -53,10 +72,10 @@ const Dropdown = forwardRef(function Dropdown(
   const [hasNav, setHasNav] = useState(false);
 
   // Controlled searchQuery — sync internal state whenever the prop changes
-  const isControlledSearch = searchQueryProp !== undefined;
+  const isControlledSearch = controlledSearchQuery !== undefined;
   useEffect(() => {
-    if (isControlledSearch) setSearchQuery(searchQueryProp);
-  }, [isControlledSearch, searchQueryProp]);
+    if (isControlledSearch) setSearchQuery(controlledSearchQuery);
+  }, [isControlledSearch, controlledSearchQuery]);
 
   const triggerRef = useRef(null);
   const contentRef = useRef(null); // scroll container inside DropdownContent
@@ -281,6 +300,8 @@ const Dropdown = forwardRef(function Dropdown(
     hasNav,
     darkMode,
     setHasNav,
+    // i18n
+    t,
     // Refs
     triggerRef,
     contentRef,
@@ -304,7 +325,7 @@ const Dropdown = forwardRef(function Dropdown(
     hasNav, displayMode, defaultGroupExpanded, darkMode,
     // all others are stable references
     fireEvent, registerGroupItems, setScrollSpyActive,
-    registerNavLabel, registerSectionRef,
+    registerNavLabel, registerSectionRef, t,
   ]);
 
   const resolvedChildren = (() => {

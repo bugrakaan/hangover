@@ -11,7 +11,7 @@ import { useDropdownContext, SectionContext, SectionControlContext } from '../..
  *  children DropdownGroup elements
  */
 function DropdownSection({ for: forProp, forId: forIdProp, title, children, ...rest }) {
-  const { activeNavId, displayMode, registerSectionRef, hasNav } = useDropdownContext();
+  const { activeNavId, displayMode, registerSectionRef, hasNav, t } = useDropdownContext();
   const sectionRef = useRef(null);
   const forId = forProp || forIdProp || '__all__';
 
@@ -71,12 +71,12 @@ function DropdownSection({ for: forProp, forId: forIdProp, title, children, ...r
             <div
               className={`hangoverDropdown-section-title${hasGroups ? ' isClickable' : ''}`}
               onClick={hasGroups ? handleToggleAll : undefined}
-              aria-label={hasGroups ? (allExpanded ? 'Collapse all groups' : 'Expand all groups') : undefined}
+              aria-label={hasGroups ? (allExpanded ? t('Collapse all groups') : t('Expand all groups')) : undefined}
               role={hasGroups ? 'button' : undefined}
               tabIndex={hasGroups ? 0 : undefined}
               onKeyDown={hasGroups ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleAll(); } } : undefined}
             >
-              <span>{title}</span>
+              <span>{t(title)}</span>
             </div>
           )}
           {children}
