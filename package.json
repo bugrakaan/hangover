@@ -1,6 +1,6 @@
 {
   "name": "@diabolic/hangover",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "A headless-style, compound React dropdown/field-picker component library",
   "license": "MIT",
   "author": "bugrakaan",
@@ -26,8 +26,7 @@
     ".": {
       "import": "./dist/index.esm.js",
       "require": "./dist/index.cjs.js"
-    },
-    "./styles": "./dist/hangover.css"
+    }
   },
   "files": [
     "dist"

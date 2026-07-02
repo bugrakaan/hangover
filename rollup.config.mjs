@@ -25,10 +25,12 @@ export default {
       file: 'dist/index.cjs.js',
       format: 'cjs',
       exports: 'named',
+      banner: "require('./hangover.css');",
     },
     {
       file: 'dist/index.esm.js',
       format: 'esm',
+      banner: "import './hangover.css';",
     },
   ],
 }

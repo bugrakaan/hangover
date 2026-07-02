@@ -36,7 +36,6 @@ npm install @diabolic/hangover
 
 ```jsx
 import { Dropdown } from '@diabolic/hangover'
-import '@diabolic/hangover/styles'
 
 export default function App() {
   return (
@@ -59,7 +58,8 @@ export default function App() {
 }
 ```
 
-Use the exported styles subpath above. Do not import from `dist/...` directly.
+Styles are imported automatically with the component. Do not import from
+`dist/...` directly.
 
 ---
 
