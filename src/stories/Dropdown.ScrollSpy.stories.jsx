@@ -729,3 +729,95 @@ export const CollapsibleNavigation = {
     </Dropdown>
   ),
 };
+
+export const SingleEntryLastCategory = {
+  name: 'Single-Entry Last Category',
+  args: {
+    defaultOpen: true,
+    defaultGroupExpanded: true,
+    hideOnSelection: true,
+    darkMode: false,
+  },
+  argTypes: {
+    collapsed: { table: { disable: true } },
+    autoCollapse: { table: { disable: true } },
+    darkMode: { control: 'boolean', description: 'Dark mode' },
+  },
+  decorators: [
+    (Story, context) => (
+      <div style={context.args.darkMode ? { background: '#12141f', padding: '24px', borderRadius: '8px', display: 'inline-block' } : {}}>
+        <Story />
+      </div>
+    ),
+  ],
+  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, darkMode }) => (
+    <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={hideOnSelection} darkMode={darkMode}>
+      <Dropdown.Trigger>
+        <button type="button" className="ho-demo-trigger">Browse Categories</button>
+      </Dropdown.Trigger>
+      <Dropdown.Panel>
+        <Dropdown.Navigation showAll allIcon={IconAll}>
+          <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
+          <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
+          <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>
+          <Dropdown.NavigationItem id="meat" icon={IconMeat}>Meat</Dropdown.NavigationItem>
+          <Dropdown.NavigationItem id="featured" icon={IconStar}>Featured</Dropdown.NavigationItem>
+        </Dropdown.Navigation>
+        <Dropdown.Content>
+          <Dropdown.Section forId="fruits" title="Fruits">
+            <Dropdown.Group label="Citrus">
+              <Dropdown.Item id="se-orange">Orange</Dropdown.Item>
+              <Dropdown.Item id="se-lemon">Lemon</Dropdown.Item>
+              <Dropdown.Item id="se-grapefruit">Grapefruit</Dropdown.Item>
+            </Dropdown.Group>
+            <Dropdown.Group label="Tropical">
+              <Dropdown.Item id="se-mango">Mango</Dropdown.Item>
+              <Dropdown.Item id="se-pineapple">Pineapple</Dropdown.Item>
+              <Dropdown.Item id="se-papaya">Papaya</Dropdown.Item>
+            </Dropdown.Group>
+          </Dropdown.Section>
+          <Dropdown.Section forId="vegetables" title="Vegetables">
+            <Dropdown.Group label="Leafy Greens">
+              <Dropdown.Item id="se-spinach">Spinach</Dropdown.Item>
+              <Dropdown.Item id="se-kale">Kale</Dropdown.Item>
+              <Dropdown.Item id="se-arugula">Arugula</Dropdown.Item>
+            </Dropdown.Group>
+            <Dropdown.Group label="Root Vegetables">
+              <Dropdown.Item id="se-carrot">Carrot</Dropdown.Item>
+              <Dropdown.Item id="se-beet">Beet</Dropdown.Item>
+              <Dropdown.Item id="se-parsnip">Parsnip</Dropdown.Item>
+            </Dropdown.Group>
+          </Dropdown.Section>
+          <Dropdown.Section forId="dairy" title="Dairy">
+            <Dropdown.Group label="Cheese">
+              <Dropdown.Item id="se-cheddar">Cheddar</Dropdown.Item>
+              <Dropdown.Item id="se-brie">Brie</Dropdown.Item>
+              <Dropdown.Item id="se-gouda">Gouda</Dropdown.Item>
+            </Dropdown.Group>
+            <Dropdown.Group label="Milk &amp; Cream">
+              <Dropdown.Item id="se-whole-milk">Whole Milk</Dropdown.Item>
+              <Dropdown.Item id="se-heavy-cream">Heavy Cream</Dropdown.Item>
+            </Dropdown.Group>
+          </Dropdown.Section>
+          <Dropdown.Section forId="meat" title="Meat">
+            <Dropdown.Group label="Poultry">
+              <Dropdown.Item id="se-chicken">Chicken</Dropdown.Item>
+              <Dropdown.Item id="se-turkey">Turkey</Dropdown.Item>
+              <Dropdown.Item id="se-duck">Duck</Dropdown.Item>
+            </Dropdown.Group>
+            <Dropdown.Group label="Red Meat">
+              <Dropdown.Item id="se-beef">Beef</Dropdown.Item>
+              <Dropdown.Item id="se-pork">Pork</Dropdown.Item>
+              <Dropdown.Item id="se-lamb">Lamb</Dropdown.Item>
+            </Dropdown.Group>
+          </Dropdown.Section>
+          <Dropdown.Section forId="featured" title="Featured">
+            <Dropdown.Group label="Editor's Pick">
+              <Dropdown.Item id="se-featured-pick">Seasonal Special</Dropdown.Item>
+            </Dropdown.Group>
+          </Dropdown.Section>
+        </Dropdown.Content>
+      </Dropdown.Panel>
+    </Dropdown>
+  ),
+};

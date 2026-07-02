@@ -59,6 +59,12 @@
 .hangoverDropdown--dark .hangoverDropdown-list:hover::-webkit-scrollbar-thumb, .hangoverDropdown--dark .hangoverDropdown-list:focus-within::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.18);
 }
+.hangoverDropdown--dark .hangoverDropdown-column.forNavigation:hover, .hangoverDropdown--dark .hangoverDropdown-column.forNavigation:focus-within {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.hangoverDropdown--dark .hangoverDropdown-column.forNavigation:hover::-webkit-scrollbar-thumb, .hangoverDropdown--dark .hangoverDropdown-column.forNavigation:focus-within::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
 
 @keyframes hangoverDropdownIn {
   from {
@@ -147,7 +153,28 @@
   box-sizing: border-box;
   flex-shrink: 0;
   flex: none;
-  transition: width 330ms ease, min-width 330ms ease;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+  transition: width 330ms ease, min-width 330ms ease, scrollbar-color 330ms ease;
+}
+.hangoverDropdown-column.forNavigation:hover, .hangoverDropdown-column.forNavigation:focus-within {
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+.hangoverDropdown-column.forNavigation::-webkit-scrollbar {
+  width: 4px;
+}
+.hangoverDropdown-column.forNavigation::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hangoverDropdown-column.forNavigation::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background 330ms ease;
+}
+.hangoverDropdown-column.forNavigation:hover::-webkit-scrollbar-thumb, .hangoverDropdown-column.forNavigation:focus-within::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
 }
 .hangoverDropdown-column.forNavigation .hangoverDropdown-nav-item {
   transition: width 330ms ease, padding 330ms ease, justify-content 330ms ease, gap 330ms ease, background 330ms ease;

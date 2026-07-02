@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDropdownContext } from '../../context/DropdownContext';
 import { renderIcon } from '../../utils/renderIcon';
 
@@ -25,9 +25,42 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
   } = useDropdownContext();
 
   const isActive = activeNavId === id;
+  const buttonRef = useRef(null);
+
   useEffect(() => {
     registerNavLabel(id, typeof children === 'string' ? children : '');
   }, [id, children, registerNavLabel]);
+
+  // When this item becomes active (e.g. via scroll-spy on the right column),
+  // keep it visible inside the scrollable nav column.
+  useEffect(() => {
+    if (!isActive) return;
+    const el = buttonRef.current;
+    if (!el) return;
+    const container = el.closest('.hangoverDropdown-column.forNavigation');
+    if (!container) return;
+
+    // Leave a gap-sized breathing space so the active item never sits flush
+    // against the top/bottom edge of the nav column.
+    const navList = el.parentElement;
+    const gap = navList
+      ? parseFloat(getComputedStyle(navList).rowGap || getComputedStyle(navList).gap) || 0
+      : 0;
+
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+
+    let delta = 0;
+    if (elRect.top < containerRect.top + gap) {
+      delta = elRect.top - containerRect.top - gap;
+    } else if (elRect.bottom > containerRect.bottom - gap) {
+      delta = elRect.bottom - containerRect.bottom + gap;
+    }
+
+    if (delta !== 0) {
+      container.scrollTo({ top: container.scrollTop + delta, behavior: 'smooth' });
+    }
+  }, [isActive]);
 
   function handleClick() {
     fireEvent('navChange', { id });
@@ -64,6 +97,7 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
   return (
     <button
       type="button"
+      ref={buttonRef}
       className={`hangoverDropdown-nav-item${isActive ? ' isActive' : ''}`}
       onClick={() => { handleClick(); userOnClick?.(); }}
       title={typeof children === 'string' ? t(children) : undefined}

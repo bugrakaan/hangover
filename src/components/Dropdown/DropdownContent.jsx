@@ -26,6 +26,7 @@ function DefaultSearchIcon() {
 function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to show here', component: Comp, children, ...rest }) {
   const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, t } = useDropdownContext();
   const searchInputRef = useRef(null);
+  const bottomPadRef = useRef(0);
 
   // Scroll spy: update active nav based on scroll position
   useEffect(() => {
@@ -70,6 +71,51 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     if (displayMode !== 'tab') return;
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [displayMode, activeNavId, contentRef]);
+
+  // Scroll mode: reserve enough space at the bottom of the list so the last
+  // section (even a short single-entry one) can be scrolled all the way to the
+  // top. Without this, a short last section can never reach the top because the
+  // container has already hit its maximum scroll position.
+  useEffect(() => {
+    if (displayMode !== 'scroll') return;
+    const list = contentRef.current;
+    if (!list) return;
+
+    function updateBottomSpace() {
+      const sections = list.querySelectorAll('[data-section-for]');
+      const lastSection = sections[sections.length - 1];
+      if (!lastSection) {
+        list.style.paddingBottom = '';
+        bottomPadRef.current = 0;
+        return;
+      }
+
+      // Derive the natural content height by subtracting our own reserved
+      // space, so recomputes never compound. Using real geometry for the last
+      // section's top keeps this margin-safe (bottom padding sits after it, so
+      // it never shifts the section's top position).
+      const available = list.clientHeight;
+      const naturalScrollHeight = list.scrollHeight - bottomPadRef.current;
+      const listTop = list.getBoundingClientRect().top;
+      const lastTopWithinContent =
+        lastSection.getBoundingClientRect().top - listTop + list.scrollTop;
+      const spaceBelowLastTop = naturalScrollHeight - lastTopWithinContent;
+      const pad = Math.max(0, available - spaceBelowLastTop);
+      bottomPadRef.current = pad;
+      list.style.paddingBottom = `${pad}px`;
+    }
+
+    updateBottomSpace();
+
+    // Observe both the container (viewport resize) and every section (group
+    // expand/collapse, late reflows) so the reserved space stays accurate.
+    const observer = new ResizeObserver(updateBottomSpace);
+    observer.observe(list);
+    list.querySelectorAll('[data-section-for]').forEach((section) => {
+      observer.observe(section);
+    });
+    return () => observer.disconnect();
+  }, [displayMode, contentRef, children, searchQuery]);
 
   function handleSearch(e) {
     fireEvent('search', { query: e.target.value });

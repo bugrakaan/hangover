@@ -450,9 +450,39 @@ function DropdownNavItem({
     t
   } = useDropdownContext();
   const isActive = activeNavId === id;
+  const buttonRef = react.useRef(null);
   react.useEffect(() => {
     registerNavLabel(id, typeof children === 'string' ? children : '');
   }, [id, children, registerNavLabel]);
+
+  // When this item becomes active (e.g. via scroll-spy on the right column),
+  // keep it visible inside the scrollable nav column.
+  react.useEffect(() => {
+    if (!isActive) return;
+    const el = buttonRef.current;
+    if (!el) return;
+    const container = el.closest('.hangoverDropdown-column.forNavigation');
+    if (!container) return;
+
+    // Leave a gap-sized breathing space so the active item never sits flush
+    // against the top/bottom edge of the nav column.
+    const navList = el.parentElement;
+    const gap = navList ? parseFloat(getComputedStyle(navList).rowGap || getComputedStyle(navList).gap) || 0 : 0;
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    let delta = 0;
+    if (elRect.top < containerRect.top + gap) {
+      delta = elRect.top - containerRect.top - gap;
+    } else if (elRect.bottom > containerRect.bottom - gap) {
+      delta = elRect.bottom - containerRect.bottom + gap;
+    }
+    if (delta !== 0) {
+      container.scrollTo({
+        top: container.scrollTop + delta,
+        behavior: 'smooth'
+      });
+    }
+  }, [isActive]);
   function handleClick() {
     fireEvent('navChange', {
       id
@@ -498,6 +528,7 @@ function DropdownNavItem({
   }
   return /*#__PURE__*/jsxRuntime.jsxs("button", {
     type: "button",
+    ref: buttonRef,
     className: `hangoverDropdown-nav-item${isActive ? ' isActive' : ''}`,
     onClick: () => {
       handleClick();
@@ -648,6 +679,7 @@ function DropdownContent({
     t
   } = useDropdownContext();
   const searchInputRef = react.useRef(null);
+  const bottomPadRef = react.useRef(0);
 
   // Scroll spy: update active nav based on scroll position
   react.useEffect(() => {
@@ -696,6 +728,48 @@ function DropdownContent({
     if (displayMode !== 'tab') return;
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [displayMode, activeNavId, contentRef]);
+
+  // Scroll mode: reserve enough space at the bottom of the list so the last
+  // section (even a short single-entry one) can be scrolled all the way to the
+  // top. Without this, a short last section can never reach the top because the
+  // container has already hit its maximum scroll position.
+  react.useEffect(() => {
+    if (displayMode !== 'scroll') return;
+    const list = contentRef.current;
+    if (!list) return;
+    function updateBottomSpace() {
+      const sections = list.querySelectorAll('[data-section-for]');
+      const lastSection = sections[sections.length - 1];
+      if (!lastSection) {
+        list.style.paddingBottom = '';
+        bottomPadRef.current = 0;
+        return;
+      }
+
+      // Derive the natural content height by subtracting our own reserved
+      // space, so recomputes never compound. Using real geometry for the last
+      // section's top keeps this margin-safe (bottom padding sits after it, so
+      // it never shifts the section's top position).
+      const available = list.clientHeight;
+      const naturalScrollHeight = list.scrollHeight - bottomPadRef.current;
+      const listTop = list.getBoundingClientRect().top;
+      const lastTopWithinContent = lastSection.getBoundingClientRect().top - listTop + list.scrollTop;
+      const spaceBelowLastTop = naturalScrollHeight - lastTopWithinContent;
+      const pad = Math.max(0, available - spaceBelowLastTop);
+      bottomPadRef.current = pad;
+      list.style.paddingBottom = `${pad}px`;
+    }
+    updateBottomSpace();
+
+    // Observe both the container (viewport resize) and every section (group
+    // expand/collapse, late reflows) so the reserved space stays accurate.
+    const observer = new ResizeObserver(updateBottomSpace);
+    observer.observe(list);
+    list.querySelectorAll('[data-section-for]').forEach(section => {
+      observer.observe(section);
+    });
+    return () => observer.disconnect();
+  }, [displayMode, contentRef, children, searchQuery]);
   function handleSearch(e) {
     fireEvent('search', {
       query: e.target.value
