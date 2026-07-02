@@ -81,12 +81,17 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     const list = contentRef.current;
     if (!list) return;
 
-    function updateBottomSpace() {
+    let rafId = null;
+
+    function computeBottomSpace() {
+      rafId = null;
       const sections = list.querySelectorAll('[data-section-for]');
       const lastSection = sections[sections.length - 1];
       if (!lastSection) {
-        list.style.paddingBottom = '';
-        bottomPadRef.current = 0;
+        if (bottomPadRef.current !== 0) {
+          list.style.paddingBottom = '';
+          bottomPadRef.current = 0;
+        }
         return;
       }
 
@@ -100,21 +105,35 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
       const lastTopWithinContent =
         lastSection.getBoundingClientRect().top - listTop + list.scrollTop;
       const spaceBelowLastTop = naturalScrollHeight - lastTopWithinContent;
-      const pad = Math.max(0, available - spaceBelowLastTop);
+      const pad = Math.max(0, Math.round(available - spaceBelowLastTop));
+
+      // Only touch the DOM when the reserved space actually changes by a whole
+      // pixel — this ignores sub-pixel/floating jitter from the observer and
+      // keeps the value stable.
+      if (Math.abs(pad - bottomPadRef.current) < 1) return;
       bottomPadRef.current = pad;
       list.style.paddingBottom = `${pad}px`;
     }
 
-    updateBottomSpace();
+    // Coalesce bursts of observer callbacks into a single measurement per frame.
+    function scheduleBottomSpace() {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(computeBottomSpace);
+    }
+
+    scheduleBottomSpace();
 
     // Observe both the container (viewport resize) and every section (group
     // expand/collapse, late reflows) so the reserved space stays accurate.
-    const observer = new ResizeObserver(updateBottomSpace);
+    const observer = new ResizeObserver(scheduleBottomSpace);
     observer.observe(list);
     list.querySelectorAll('[data-section-for]').forEach((section) => {
       observer.observe(section);
     });
-    return () => observer.disconnect();
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      observer.disconnect();
+    };
   }, [displayMode, contentRef, children, searchQuery]);
 
   function handleSearch(e) {
