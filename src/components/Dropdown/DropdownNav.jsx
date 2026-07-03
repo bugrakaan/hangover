@@ -1,6 +1,7 @@
 import { Children, useEffect, useRef, useState } from 'react';
 import DropdownNavItem from './DropdownNavItem';
 import { useDropdownContext } from '../../context/DropdownContext';
+import { isVisible, closestByVerticalPosition, scrollWithin } from '../../utils/keyboardNav';
 
 /**
  * DropdownNav
@@ -27,7 +28,7 @@ function DropdownNav({
   autoCollapse = false,
   ...rest
 }) {
-  const { setHasNav } = useDropdownContext();
+  const { setHasNav, contentRef } = useDropdownContext();
   const wrapperRef = useRef(null);
   const naturalWidthRef = useRef(null);
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
@@ -86,20 +87,57 @@ function DropdownNav({
     </>
   );
 
+  // Keyboard navigation for the nav column:
+  //  - ArrowDown/ArrowUp cycle (wrap) through nav items.
+  //  - ArrowRight jumps to the position-closest item in the content column.
+  function handleNavKeyDown(e) {
+    const navRoot = wrapperRef.current;
+    if (!navRoot) return;
+    const active = document.activeElement;
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+      if (items.length === 0) return;
+      e.preventDefault();
+      const dir = e.key === 'ArrowDown' ? 1 : -1;
+      const idx = items.indexOf(active);
+      const nextIdx = idx === -1
+        ? (dir === 1 ? 0 : items.length - 1)
+        : (idx + dir + items.length) % items.length;
+      const target = items[nextIdx];
+      target.focus({ preventScroll: true });
+      scrollWithin(navRoot, target);
+    } else if (e.key === 'ArrowRight') {
+      const list = contentRef?.current;
+      if (!list) return;
+      const contentItems = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible);
+      if (contentItems.length === 0) return;
+      e.preventDefault();
+      const target = active && active.classList.contains('hangoverDropdown-nav-item')
+        ? closestByVerticalPosition(contentItems, active)
+        : contentItems[0];
+      if (!target) return;
+      target.focus({ preventScroll: true });
+      const stickyEl = list.querySelector('.hangoverDropdown-section-title');
+      const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
+      scrollWithin(list, target, stickyHeight);
+    }
+  }
+
   const colClass = `hangoverDropdown-column forNavigation${isCollapsed ? ' isCollapsed' : ''}`;
 
   if (isSingle) return null;
 
   if (Comp) {
     return (
-      <Comp ref={wrapperRef} className={colClass} {...rest}>
+      <Comp ref={wrapperRef} className={colClass} onKeyDown={handleNavKeyDown} {...rest}>
         <nav className="hangoverDropdown-nav">{inner}</nav>
       </Comp>
     );
   }
 
   return (
-    <div ref={wrapperRef} className={colClass} {...rest}>
+    <div ref={wrapperRef} className={colClass} onKeyDown={handleNavKeyDown} {...rest}>
       <nav className="hangoverDropdown-nav">{inner}</nav>
     </div>
   );

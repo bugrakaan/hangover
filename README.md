@@ -11,7 +11,7 @@ A React 18 compound-component Dropdown / Field Picker library.
 
 - **Compound Components** - Composable `Dropdown.Trigger`, `Panel`, `Navigation`, `Section`, `Group`, `Item` API
 - **Fuzzy Search** - Built-in fuzzy filtering across items (powered by fuse.js)
-- **Keyboard Navigation** - Arrow up/down to move between visible items (before and after searching), Enter to trigger
+- **Keyboard Navigation** - Arrow up/down (with wrap) to move between items, left/right to jump between the nav column and content, Enter to trigger
 - **Two Display Modes** - Scroll-spy with smooth scroll or one-section-at-a-time tab mode
 - **Left Navigation** - Optional nav column with auto-collapse and single-section auto-transform
 - **Checkbox Items** - Multi-select with select-all support

@@ -545,6 +545,62 @@ function DropdownNavItem({
   });
 }
 
+// Shared helpers for keyboard navigation across the dropdown panel.
+
+/** Whether an element is currently rendered/visible (not display:none, etc). */
+function isVisible(el) {
+  return !!el && el.offsetParent !== null;
+}
+
+/** Vertical center of an element in viewport coordinates. */
+function verticalCenter(el) {
+  const rect = el.getBoundingClientRect();
+  return rect.top + rect.height / 2;
+}
+
+/**
+ * From a list of candidate elements, return the one whose vertical center is
+ * closest to the source element's vertical center. Used to pick the most
+ * position-appropriate target when moving between the left and right columns.
+ */
+function closestByVerticalPosition(candidates, sourceEl) {
+  if (!candidates.length) return null;
+  const center = verticalCenter(sourceEl);
+  let best = candidates[0];
+  let bestDist = Math.abs(verticalCenter(best) - center);
+  for (let i = 1; i < candidates.length; i += 1) {
+    const dist = Math.abs(verticalCenter(candidates[i]) - center);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = candidates[i];
+    }
+  }
+  return best;
+}
+
+/**
+ * Smoothly scroll `el` into view inside its scrollable `container`, leaving
+ * `topOffset` px of space at the top (e.g. for a sticky header + gap) and
+ * `bottomOffset` px at the bottom.
+ */
+function scrollWithin(container, el, topOffset = 0, bottomOffset = 0) {
+  if (!container || !el) return;
+  const containerRect = container.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  let delta = 0;
+  if (elRect.top < containerRect.top + topOffset) {
+    delta = elRect.top - (containerRect.top + topOffset);
+  } else if (elRect.bottom > containerRect.bottom - bottomOffset) {
+    delta = elRect.bottom - (containerRect.bottom - bottomOffset);
+  }
+  if (delta !== 0) {
+    container.scrollTo({
+      top: container.scrollTop + delta,
+      behavior: 'smooth'
+    });
+  }
+}
+
 function DropdownNav({
   showAll = false,
   allLabel = 'All',
@@ -556,7 +612,8 @@ function DropdownNav({
   ...rest
 }) {
   const {
-    setHasNav
+    setHasNav,
+    contentRef
   } = useDropdownContext();
   const wrapperRef = useRef(null);
   const naturalWidthRef = useRef(null);
@@ -606,12 +663,49 @@ function DropdownNav({
       children: allLabel
     }), children]
   });
+
+  // Keyboard navigation for the nav column:
+  //  - ArrowDown/ArrowUp cycle (wrap) through nav items.
+  //  - ArrowRight jumps to the position-closest item in the content column.
+  function handleNavKeyDown(e) {
+    const navRoot = wrapperRef.current;
+    if (!navRoot) return;
+    const active = document.activeElement;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+      if (items.length === 0) return;
+      e.preventDefault();
+      const dir = e.key === 'ArrowDown' ? 1 : -1;
+      const idx = items.indexOf(active);
+      const nextIdx = idx === -1 ? dir === 1 ? 0 : items.length - 1 : (idx + dir + items.length) % items.length;
+      const target = items[nextIdx];
+      target.focus({
+        preventScroll: true
+      });
+      scrollWithin(navRoot, target);
+    } else if (e.key === 'ArrowRight') {
+      const list = contentRef?.current;
+      if (!list) return;
+      const contentItems = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible);
+      if (contentItems.length === 0) return;
+      e.preventDefault();
+      const target = active && active.classList.contains('hangoverDropdown-nav-item') ? closestByVerticalPosition(contentItems, active) : contentItems[0];
+      if (!target) return;
+      target.focus({
+        preventScroll: true
+      });
+      const stickyEl = list.querySelector('.hangoverDropdown-section-title');
+      const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
+      scrollWithin(list, target, stickyHeight);
+    }
+  }
   const colClass = `hangoverDropdown-column forNavigation${isCollapsed ? ' isCollapsed' : ''}`;
   if (isSingle) return null;
   if (Comp) {
     return /*#__PURE__*/jsx(Comp, {
       ref: wrapperRef,
       className: colClass,
+      onKeyDown: handleNavKeyDown,
       ...rest,
       children: /*#__PURE__*/jsx("nav", {
         className: "hangoverDropdown-nav",
@@ -622,6 +716,7 @@ function DropdownNav({
   return /*#__PURE__*/jsx("div", {
     ref: wrapperRef,
     className: colClass,
+    onKeyDown: handleNavKeyDown,
     ...rest,
     children: /*#__PURE__*/jsx("nav", {
       className: "hangoverDropdown-nav",
@@ -798,51 +893,84 @@ function DropdownContent({
     const list = contentRef.current;
     if (!list || !el) return;
 
-    // Offset by the sticky section header so the item stays fully visible
-    // when navigating upwards.
+    // Offset by the sticky section header + the gap between items so the item
+    // stays fully visible with breathing room when navigating.
     const stickyEl = list.querySelector('.hangoverDropdown-section-title');
     const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
-    const listRect = list.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-    let delta = 0;
-    if (elRect.top < listRect.top + stickyHeight) {
-      delta = elRect.top - (listRect.top + stickyHeight);
-    } else if (elRect.bottom > listRect.bottom) {
-      delta = elRect.bottom - listRect.bottom;
-    }
-    if (delta !== 0) {
-      list.scrollTo({
-        top: list.scrollTop + delta,
+    const gap = el.parentElement ? parseFloat(getComputedStyle(el.parentElement).rowGap) || 0 : 0;
+    scrollWithin(list, el, stickyHeight + gap, gap);
+  }
+  function focusTarget(el) {
+    if (!el) return;
+    if (el === searchInputRef.current) {
+      el.focus();
+      contentRef.current?.scrollTo({
+        top: 0,
         behavior: 'smooth'
       });
-    }
-  }
-  function moveItemFocus(direction) {
-    const list = contentRef.current;
-    if (!list) return;
-    const items = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(el => el.offsetParent !== null);
-    if (items.length === 0) return;
-    const active = document.activeElement;
-    const idx = items.indexOf(active);
-    if (direction === 1) {
-      const next = idx < 0 ? items[0] : items[idx + 1];
-      if (next) {
-        next.focus({
-          preventScroll: true
-        });
-        scrollItemIntoView(next);
-      }
-    } else if (idx > 0) {
-      const prev = items[idx - 1];
-      prev.focus({
+    } else {
+      el.focus({
         preventScroll: true
       });
-      scrollItemIntoView(prev);
-    } else if (idx === 0 && searchInputRef.current) {
-      searchInputRef.current.focus();
+      scrollItemIntoView(el);
     }
   }
+
+  // The focusable sequence in the right column: the search input (if present)
+  // followed by every visible item. Up/Down wrap around this sequence.
+  function getFocusSequence() {
+    const list = contentRef.current;
+    const items = list ? Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible) : [];
+    const seq = [];
+    if (searchInputRef.current) seq.push(searchInputRef.current);
+    seq.push(...items);
+    return seq;
+  }
+  function moveItemFocus(direction) {
+    const seq = getFocusSequence();
+    if (seq.length === 0) return;
+    const active = document.activeElement;
+    const idx = seq.indexOf(active);
+    let nextIdx;
+    if (idx === -1) {
+      nextIdx = direction === 1 ? 0 : seq.length - 1;
+    } else {
+      nextIdx = (idx + direction + seq.length) % seq.length;
+    }
+    focusTarget(seq[nextIdx]);
+  }
+
+  // ArrowLeft from a content item jumps to the position-closest nav item.
+  function focusNavFromItem() {
+    const active = document.activeElement;
+    if (!active || !active.classList.contains('hangoverDropdown-item')) return false;
+    const panel = active.closest('.hangoverDropdown-panel');
+    const nav = panel?.querySelector('.hangoverDropdown-column.forNavigation');
+    if (!nav) return false;
+    const navItems = Array.from(nav.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+    if (navItems.length === 0) return false;
+    const target = closestByVerticalPosition(navItems, active);
+    if (!target) return false;
+    target.focus({
+      preventScroll: true
+    });
+    scrollWithin(nav, target);
+    return true;
+  }
   function handleKeyNav(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveItemFocus(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveItemFocus(-1);
+    } else if (e.key === 'ArrowLeft') {
+      if (focusNavFromItem()) e.preventDefault();
+    }
+  }
+
+  // The search input keeps Left/Right for caret movement; only Up/Down navigate.
+  function handleSearchKeyNav(e) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       moveItemFocus(1);
@@ -865,7 +993,7 @@ function DropdownContent({
         "aria-label": t(searchPlaceholder),
         value: searchQuery,
         onChange: handleSearch,
-        onKeyDown: handleKeyNav,
+        onKeyDown: handleSearchKeyNav,
         ref: searchInputRef
       })]
     }), /*#__PURE__*/jsx("div", {

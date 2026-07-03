@@ -1,5 +1,6 @@
 import { useEffect, useRef, Children } from 'react';
 import { useDropdownContext } from '../../context/DropdownContext';
+import { isVisible, closestByVerticalPosition, scrollWithin } from '../../utils/keyboardNav';
 
 // Default search icon (inline SVG)
 function DefaultSearchIcon() {
@@ -147,52 +148,86 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     const list = contentRef.current;
     if (!list || !el) return;
 
-    // Offset by the sticky section header so the item stays fully visible
-    // when navigating upwards.
+    // Offset by the sticky section header + the gap between items so the item
+    // stays fully visible with breathing room when navigating.
     const stickyEl = list.querySelector('.hangoverDropdown-section-title');
     const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
+    const gap = el.parentElement
+      ? parseFloat(getComputedStyle(el.parentElement).rowGap) || 0
+      : 0;
 
-    const listRect = list.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
+    scrollWithin(list, el, stickyHeight + gap, gap);
+  }
 
-    let delta = 0;
-    if (elRect.top < listRect.top + stickyHeight) {
-      delta = elRect.top - (listRect.top + stickyHeight);
-    } else if (elRect.bottom > listRect.bottom) {
-      delta = elRect.bottom - listRect.bottom;
+  function focusTarget(el) {
+    if (!el) return;
+    if (el === searchInputRef.current) {
+      el.focus();
+      contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      el.focus({ preventScroll: true });
+      scrollItemIntoView(el);
     }
+  }
 
-    if (delta !== 0) {
-      list.scrollTo({ top: list.scrollTop + delta, behavior: 'smooth' });
-    }
+  // The focusable sequence in the right column: the search input (if present)
+  // followed by every visible item. Up/Down wrap around this sequence.
+  function getFocusSequence() {
+    const list = contentRef.current;
+    const items = list
+      ? Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible)
+      : [];
+    const seq = [];
+    if (searchInputRef.current) seq.push(searchInputRef.current);
+    seq.push(...items);
+    return seq;
   }
 
   function moveItemFocus(direction) {
-    const list = contentRef.current;
-    if (!list) return;
-    const items = Array.from(list.querySelectorAll('.hangoverDropdown-item'))
-      .filter((el) => el.offsetParent !== null);
-    if (items.length === 0) return;
+    const seq = getFocusSequence();
+    if (seq.length === 0) return;
 
     const active = document.activeElement;
-    const idx = items.indexOf(active);
-
-    if (direction === 1) {
-      const next = idx < 0 ? items[0] : items[idx + 1];
-      if (next) {
-        next.focus({ preventScroll: true });
-        scrollItemIntoView(next);
-      }
-    } else if (idx > 0) {
-      const prev = items[idx - 1];
-      prev.focus({ preventScroll: true });
-      scrollItemIntoView(prev);
-    } else if (idx === 0 && searchInputRef.current) {
-      searchInputRef.current.focus();
+    const idx = seq.indexOf(active);
+    let nextIdx;
+    if (idx === -1) {
+      nextIdx = direction === 1 ? 0 : seq.length - 1;
+    } else {
+      nextIdx = (idx + direction + seq.length) % seq.length;
     }
+    focusTarget(seq[nextIdx]);
+  }
+
+  // ArrowLeft from a content item jumps to the position-closest nav item.
+  function focusNavFromItem() {
+    const active = document.activeElement;
+    if (!active || !active.classList.contains('hangoverDropdown-item')) return false;
+    const panel = active.closest('.hangoverDropdown-panel');
+    const nav = panel?.querySelector('.hangoverDropdown-column.forNavigation');
+    if (!nav) return false;
+    const navItems = Array.from(nav.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+    if (navItems.length === 0) return false;
+    const target = closestByVerticalPosition(navItems, active);
+    if (!target) return false;
+    target.focus({ preventScroll: true });
+    scrollWithin(nav, target);
+    return true;
   }
 
   function handleKeyNav(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveItemFocus(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveItemFocus(-1);
+    } else if (e.key === 'ArrowLeft') {
+      if (focusNavFromItem()) e.preventDefault();
+    }
+  }
+
+  // The search input keeps Left/Right for caret movement; only Up/Down navigate.
+  function handleSearchKeyNav(e) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       moveItemFocus(1);
@@ -218,7 +253,7 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
             aria-label={t(searchPlaceholder)}
             value={searchQuery}
             onChange={handleSearch}
-            onKeyDown={handleKeyNav}
+            onKeyDown={handleSearchKeyNav}
             ref={searchInputRef}
           />
         </label>

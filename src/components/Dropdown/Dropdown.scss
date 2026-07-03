@@ -53,7 +53,7 @@
   --hangover-color-bg-nav: #1e2235;
   --hangover-color-bg-nav-hover: #1c3a5c;
   --hangover-color-bg-nav-active: #162f50;
-  --hangover-color-bg-hover: #22253a;
+  --hangover-color-bg-hover: #2f3654;
   --hangover-color-bg-hover-dark: #272b42;
   --hangover-color-bg-selected: #1c2d55;
   --hangover-color-bg-checked: #1a3050;
@@ -285,6 +285,11 @@
       box-sizing: border-box;
 
       &:hover {
+        background: var(--hangover-color-bg-nav-hover);
+      }
+
+      &:focus-visible {
+        outline: none;
         background: var(--hangover-color-bg-nav-hover);
       }
 
