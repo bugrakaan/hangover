@@ -1,5 +1,11 @@
 import { Dropdown } from '../components/Dropdown';
 
+const AUTO_COLLAPSE_ARG_TYPE = {
+  control: 'select',
+  options: [false, true, 'auto'],
+  description: 'Automatically collapse nav; "auto" expands on hover or keyboard focus',
+};
+
 export default {
   title: 'Dropdown/2. Scroll Spy',
   parameters: {
@@ -24,10 +30,7 @@ export default {
       control: 'boolean',
       description: 'Initial collapsed state of the navigation',
     },
-    autoCollapse: {
-      control: 'boolean',
-      description: 'Automatically collapse nav when panel or window is too narrow',
-    },
+    autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
   },
 };
 
@@ -215,7 +218,7 @@ const ProductionMode = {
       description: 'Panel placement relative to trigger',
     },
     collapsed: { control: 'boolean', description: 'Initial collapsed state' },
-    autoCollapse: { control: 'boolean', description: 'Automatically collapse when window is too narrow' },
+    autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
     darkMode: { control: 'boolean', description: 'Dark mode' },
   },
   decorators: [
@@ -443,7 +446,7 @@ const ProductionModeIcons = {
       description: 'Panel placement relative to trigger',
     },
     collapsed: { control: 'boolean', description: 'Initial collapsed state' },
-    autoCollapse: { control: 'boolean', description: 'Automatically collapse when window is too narrow' },
+    autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
     darkMode: { control: 'boolean', description: 'Dark mode' },
   },
   decorators: [
@@ -565,10 +568,7 @@ export const LongTextContent = {
   },
   argTypes: {
     collapsed: { table: { disable: true } },
-    autoCollapse: {
-      control: 'boolean',
-      description: 'Automatically collapse navigation when panel width is constrained',
-    },
+    autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
     placement: {
       control: 'select',
       options: ['bottom-start', 'bottom', 'bottom-end', 'top-start', 'top', 'top-end'],
@@ -659,75 +659,92 @@ export const CollapsibleNavigation = {
     defaultGroupExpanded: true,
     collapsed: false,
     autoCollapse: true,
+    theme: 'light',
   },
   argTypes: {
     hideOnSelection: { table: { disable: true } },
     collapsed: { control: 'boolean', description: 'Initial collapsed state' },
-    autoCollapse: { control: 'boolean', description: 'Automatically collapse when panel or window is too narrow' },
+    autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
+    theme: {
+      control: 'select',
+      options: ['light', 'dark'],
+      description: 'Dropdown theme',
+    },
   },
-  render: ({ defaultOpen, defaultGroupExpanded, collapsed, autoCollapse }) => (
-    <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={false}>
-      <Dropdown.Trigger>
-        <button type="button" className="ho-demo-trigger">Browse Categories</button>
-      </Dropdown.Trigger>
-      <Dropdown.Panel>
-        <Dropdown.Navigation showAll allIcon={IconAll} collapsed={collapsed} autoCollapse={autoCollapse}>
-          <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
-          <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
-          <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>
-          <Dropdown.NavigationItem id="meat" icon={IconMeat}>Meat</Dropdown.NavigationItem>
-        </Dropdown.Navigation>
-        <Dropdown.Content>
-          <Dropdown.Section forId="fruits" title="Fruits">
-            <Dropdown.Group label="Citrus">
-              <Dropdown.Item id="c-orange">Orange</Dropdown.Item>
-              <Dropdown.Item id="c-lemon">Lemon</Dropdown.Item>
-              <Dropdown.Item id="c-grapefruit">Grapefruit</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Tropical">
-              <Dropdown.Item id="c-mango">Mango</Dropdown.Item>
-              <Dropdown.Item id="c-pineapple">Pineapple</Dropdown.Item>
-              <Dropdown.Item id="c-papaya">Papaya</Dropdown.Item>
-            </Dropdown.Group>
-          </Dropdown.Section>
-          <Dropdown.Section forId="vegetables" title="Vegetables">
-            <Dropdown.Group label="Leafy Greens">
-              <Dropdown.Item id="c-spinach">Spinach</Dropdown.Item>
-              <Dropdown.Item id="c-kale">Kale</Dropdown.Item>
-              <Dropdown.Item id="c-arugula">Arugula</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Root Vegetables">
-              <Dropdown.Item id="c-carrot">Carrot</Dropdown.Item>
-              <Dropdown.Item id="c-beet">Beet</Dropdown.Item>
-              <Dropdown.Item id="c-radish">Radish</Dropdown.Item>
-            </Dropdown.Group>
-          </Dropdown.Section>
-          <Dropdown.Section forId="dairy" title="Dairy">
-            <Dropdown.Group label="Cheese">
-              <Dropdown.Item id="c-cheddar">Cheddar</Dropdown.Item>
-              <Dropdown.Item id="c-brie">Brie</Dropdown.Item>
-              <Dropdown.Item id="c-gouda">Gouda</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Milk &amp; Cream">
-              <Dropdown.Item id="c-whole-milk">Whole Milk</Dropdown.Item>
-              <Dropdown.Item id="c-cream">Heavy Cream</Dropdown.Item>
-            </Dropdown.Group>
-          </Dropdown.Section>
-          <Dropdown.Section forId="meat" title="Meat">
-            <Dropdown.Group label="Poultry">
-              <Dropdown.Item id="c-chicken">Chicken</Dropdown.Item>
-              <Dropdown.Item id="c-turkey">Turkey</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Red Meat">
-              <Dropdown.Item id="c-beef">Beef</Dropdown.Item>
-              <Dropdown.Item id="c-lamb">Lamb</Dropdown.Item>
-              <Dropdown.Item id="c-pork">Pork</Dropdown.Item>
-            </Dropdown.Group>
-          </Dropdown.Section>
-        </Dropdown.Content>
-      </Dropdown.Panel>
-    </Dropdown>
-  ),
+  decorators: [
+    (Story, context) => (
+      <div style={context.args.theme === 'dark' ? { background: '#12141f', padding: '24px', borderRadius: '8px', display: 'inline-block' } : {}}>
+        <Story />
+      </div>
+    ),
+  ],
+  render: ({ defaultOpen, defaultGroupExpanded, collapsed, autoCollapse, theme }) => {
+    const darkMode = theme === 'dark';
+
+    return (
+      <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={false} darkMode={darkMode}>
+        <Dropdown.Trigger>
+          <button type="button" className="ho-demo-trigger">Browse Categories</button>
+        </Dropdown.Trigger>
+        <Dropdown.Panel>
+          <Dropdown.Navigation showAll allIcon={IconAll} collapsed={collapsed} autoCollapse={autoCollapse}>
+            <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
+            <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
+            <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>
+            <Dropdown.NavigationItem id="meat" icon={IconMeat}>Meat</Dropdown.NavigationItem>
+          </Dropdown.Navigation>
+          <Dropdown.Content>
+            <Dropdown.Section forId="fruits" title="Fruits">
+              <Dropdown.Group label="Citrus">
+                <Dropdown.Item id="c-orange">Orange</Dropdown.Item>
+                <Dropdown.Item id="c-lemon">Lemon</Dropdown.Item>
+                <Dropdown.Item id="c-grapefruit">Grapefruit</Dropdown.Item>
+              </Dropdown.Group>
+              <Dropdown.Group label="Tropical">
+                <Dropdown.Item id="c-mango">Mango</Dropdown.Item>
+                <Dropdown.Item id="c-pineapple">Pineapple</Dropdown.Item>
+                <Dropdown.Item id="c-papaya">Papaya</Dropdown.Item>
+              </Dropdown.Group>
+            </Dropdown.Section>
+            <Dropdown.Section forId="vegetables" title="Vegetables">
+              <Dropdown.Group label="Leafy Greens">
+                <Dropdown.Item id="c-spinach">Spinach</Dropdown.Item>
+                <Dropdown.Item id="c-kale">Kale</Dropdown.Item>
+                <Dropdown.Item id="c-arugula">Arugula</Dropdown.Item>
+              </Dropdown.Group>
+              <Dropdown.Group label="Root Vegetables">
+                <Dropdown.Item id="c-carrot">Carrot</Dropdown.Item>
+                <Dropdown.Item id="c-beet">Beet</Dropdown.Item>
+                <Dropdown.Item id="c-radish">Radish</Dropdown.Item>
+              </Dropdown.Group>
+            </Dropdown.Section>
+            <Dropdown.Section forId="dairy" title="Dairy">
+              <Dropdown.Group label="Cheese">
+                <Dropdown.Item id="c-cheddar">Cheddar</Dropdown.Item>
+                <Dropdown.Item id="c-brie">Brie</Dropdown.Item>
+                <Dropdown.Item id="c-gouda">Gouda</Dropdown.Item>
+              </Dropdown.Group>
+              <Dropdown.Group label="Milk &amp; Cream">
+                <Dropdown.Item id="c-whole-milk">Whole Milk</Dropdown.Item>
+                <Dropdown.Item id="c-cream">Heavy Cream</Dropdown.Item>
+              </Dropdown.Group>
+            </Dropdown.Section>
+            <Dropdown.Section forId="meat" title="Meat">
+              <Dropdown.Group label="Poultry">
+                <Dropdown.Item id="c-chicken">Chicken</Dropdown.Item>
+                <Dropdown.Item id="c-turkey">Turkey</Dropdown.Item>
+              </Dropdown.Group>
+              <Dropdown.Group label="Red Meat">
+                <Dropdown.Item id="c-beef">Beef</Dropdown.Item>
+                <Dropdown.Item id="c-lamb">Lamb</Dropdown.Item>
+                <Dropdown.Item id="c-pork">Pork</Dropdown.Item>
+              </Dropdown.Group>
+            </Dropdown.Section>
+          </Dropdown.Content>
+        </Dropdown.Panel>
+      </Dropdown>
+    );
+  },
 };
 
 export const SingleEntryLastCategory = {

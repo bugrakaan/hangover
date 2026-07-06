@@ -622,8 +622,11 @@ function DropdownNav({
   const wrapperRef = react.useRef(null);
   const naturalWidthRef = react.useRef(null);
   const [isCollapsed, setIsCollapsed] = react.useState(collapsed);
+  const [isInteractivelyExpanded, setIsInteractivelyExpanded] = react.useState(false);
   const childCount = react.Children.count(children);
   const isSingle = childCount <= 1;
+  const shouldAutoCollapse = autoCollapse === true || autoCollapse === 'auto';
+  const canInteractivelyExpand = autoCollapse === 'auto' && collapsed;
   react.useEffect(() => {
     setHasNav(!isSingle);
     return () => setHasNav(false);
@@ -631,10 +634,14 @@ function DropdownNav({
 
   // collapsed prop always sets the base state
   react.useEffect(() => {
+    if (canInteractivelyExpand && isInteractivelyExpanded) {
+      setIsCollapsed(false);
+      return;
+    }
     setIsCollapsed(collapsed);
-  }, [collapsed]);
+  }, [canInteractivelyExpand, collapsed, isInteractivelyExpanded]);
   react.useEffect(() => {
-    if (!autoCollapse) return;
+    if (!shouldAutoCollapse) return;
     function getNaturalWidth() {
       const styles = getComputedStyle(document.documentElement);
       const navWidth = parseFloat(styles.getPropertyValue('--hangover-nav-width')) || 0;
@@ -646,7 +653,7 @@ function DropdownNav({
         naturalWidthRef.current = getNaturalWidth();
       }
       const panelTooWide = window.innerWidth < naturalWidthRef.current + 32;
-      setIsCollapsed(panelTooWide || collapsed);
+      setIsCollapsed(canInteractivelyExpand && isInteractivelyExpanded ? false : panelTooWide || collapsed);
     }
     window.addEventListener('resize', check);
     window.addEventListener('scroll', check, {
@@ -659,7 +666,37 @@ function DropdownNav({
       naturalWidthRef.current = null;
       setIsCollapsed(collapsed);
     };
-  }, [autoCollapse, collapsed]);
+  }, [canInteractivelyExpand, collapsed, isInteractivelyExpanded, shouldAutoCollapse]);
+  const expandInteractively = () => {
+    if (canInteractivelyExpand) {
+      setIsInteractivelyExpanded(true);
+    }
+  };
+  const collapseInteractively = () => {
+    if (canInteractivelyExpand) {
+      setIsInteractivelyExpanded(false);
+    }
+  };
+  const handleBlur = e => {
+    if (!wrapperRef.current?.contains(e.relatedTarget)) {
+      collapseInteractively();
+    }
+    rest.onBlur?.(e);
+  };
+  const handleFocus = e => {
+    expandInteractively();
+    rest.onFocus?.(e);
+  };
+  const handleMouseEnter = e => {
+    expandInteractively();
+    rest.onMouseEnter?.(e);
+  };
+  const handleMouseLeave = e => {
+    if (!wrapperRef.current?.contains(document.activeElement)) {
+      collapseInteractively();
+    }
+    rest.onMouseLeave?.(e);
+  };
   const inner = /*#__PURE__*/jsxRuntime.jsxs(jsxRuntime.Fragment, {
     children: [showAll && /*#__PURE__*/jsxRuntime.jsx(DropdownNavItem, {
       id: "__all__",
@@ -672,6 +709,8 @@ function DropdownNav({
   //  - ArrowDown/ArrowUp cycle (wrap) through nav items.
   //  - ArrowRight jumps to the position-closest item in the content column.
   function handleNavKeyDown(e) {
+    expandInteractively();
+    rest.onKeyDown?.(e);
     const navRoot = wrapperRef.current;
     if (!navRoot) return;
     const active = document.activeElement;
@@ -690,6 +729,15 @@ function DropdownNav({
     } else if (e.key === 'ArrowRight') {
       const list = contentRef?.current;
       if (!list) return;
+      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+      const firstItem = items[0];
+      const panel = navRoot.closest('.hangoverDropdown-panel');
+      const searchInput = panel?.querySelector('.hangoverDropdown-search-input');
+      if (active === firstItem && searchInput && isVisible(searchInput)) {
+        e.preventDefault();
+        searchInput.focus();
+        return;
+      }
       const contentItems = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible);
       if (contentItems.length === 0) return;
       e.preventDefault();
@@ -707,10 +755,14 @@ function DropdownNav({
   if (isSingle) return null;
   if (Comp) {
     return /*#__PURE__*/jsxRuntime.jsx(Comp, {
+      ...rest,
       ref: wrapperRef,
       className: colClass,
+      onBlur: handleBlur,
+      onFocus: handleFocus,
       onKeyDown: handleNavKeyDown,
-      ...rest,
+      onMouseEnter: handleMouseEnter,
+      onMouseLeave: handleMouseLeave,
       children: /*#__PURE__*/jsxRuntime.jsx("nav", {
         className: "hangoverDropdown-nav",
         children: inner
@@ -718,10 +770,14 @@ function DropdownNav({
     });
   }
   return /*#__PURE__*/jsxRuntime.jsx("div", {
+    ...rest,
     ref: wrapperRef,
     className: colClass,
+    onBlur: handleBlur,
+    onFocus: handleFocus,
     onKeyDown: handleNavKeyDown,
-    ...rest,
+    onMouseEnter: handleMouseEnter,
+    onMouseLeave: handleMouseLeave,
     children: /*#__PURE__*/jsxRuntime.jsx("nav", {
       className: "hangoverDropdown-nav",
       children: inner
@@ -4414,7 +4470,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
  *   allLabel?:     string
  *   allIcon?:      ReactNode | FC
  *   collapsed?:    boolean
- *   autoCollapse?: boolean
+ *   autoCollapse?: boolean | 'auto'
  *
  *   // Content column
  *   content: {

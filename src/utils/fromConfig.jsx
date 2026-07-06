@@ -50,7 +50,7 @@ export { buildFromConfig } from './buildFromConfig';
  *   allLabel?:     string
  *   allIcon?:      ReactNode | FC
  *   collapsed?:    boolean
- *   autoCollapse?: boolean
+ *   autoCollapse?: boolean | 'auto'
  *
  *   // Content column
  *   content: {

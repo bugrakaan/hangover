@@ -16,7 +16,9 @@ import { isVisible, closestByVerticalPosition, scrollWithin } from '../../utils/
  *  children      DropdownNavItem elements
  *  component     custom wrapper component
  *  collapsed     bool — initial/default collapsed state (default false)
- *  autoCollapse  bool — automatically collapse when window is too narrow to fit the panel (default false)
+ *  autoCollapse  bool | 'auto' — automatically collapse when window is too narrow
+ *                to fit the panel. In 'auto' mode, a collapsed nav expands
+ *                while hovered or keyboard-focused.
  */
 function DropdownNav({
   showAll = false,
@@ -32,9 +34,12 @@ function DropdownNav({
   const wrapperRef = useRef(null);
   const naturalWidthRef = useRef(null);
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const [isInteractivelyExpanded, setIsInteractivelyExpanded] = useState(false);
 
   const childCount = Children.count(children);
   const isSingle = childCount <= 1;
+  const shouldAutoCollapse = autoCollapse === true || autoCollapse === 'auto';
+  const canInteractivelyExpand = autoCollapse === 'auto' && collapsed;
 
   useEffect(() => {
     setHasNav(!isSingle);
@@ -43,11 +48,16 @@ function DropdownNav({
 
   // collapsed prop always sets the base state
   useEffect(() => {
+    if (canInteractivelyExpand && isInteractivelyExpanded) {
+      setIsCollapsed(false);
+      return;
+    }
+
     setIsCollapsed(collapsed);
-  }, [collapsed]);
+  }, [canInteractivelyExpand, collapsed, isInteractivelyExpanded]);
 
   useEffect(() => {
-    if (!autoCollapse) return;
+    if (!shouldAutoCollapse) return;
 
     function getNaturalWidth() {
       const styles = getComputedStyle(document.documentElement);
@@ -61,7 +71,9 @@ function DropdownNav({
         naturalWidthRef.current = getNaturalWidth();
       }
       const panelTooWide = window.innerWidth < naturalWidthRef.current + 32;
-      setIsCollapsed(panelTooWide || collapsed);
+      setIsCollapsed(canInteractivelyExpand && isInteractivelyExpanded
+        ? false
+        : panelTooWide || collapsed);
     }
 
     window.addEventListener('resize', check);
@@ -74,7 +86,45 @@ function DropdownNav({
       naturalWidthRef.current = null;
       setIsCollapsed(collapsed);
     };
-  }, [autoCollapse, collapsed]);
+  }, [canInteractivelyExpand, collapsed, isInteractivelyExpanded, shouldAutoCollapse]);
+
+  const expandInteractively = () => {
+    if (canInteractivelyExpand) {
+      setIsInteractivelyExpanded(true);
+    }
+  };
+
+  const collapseInteractively = () => {
+    if (canInteractivelyExpand) {
+      setIsInteractivelyExpanded(false);
+    }
+  };
+
+  const handleBlur = e => {
+    if (!wrapperRef.current?.contains(e.relatedTarget)) {
+      collapseInteractively();
+    }
+
+    rest.onBlur?.(e);
+  };
+
+  const handleFocus = e => {
+    expandInteractively();
+    rest.onFocus?.(e);
+  };
+
+  const handleMouseEnter = e => {
+    expandInteractively();
+    rest.onMouseEnter?.(e);
+  };
+
+  const handleMouseLeave = e => {
+    if (!wrapperRef.current?.contains(document.activeElement)) {
+      collapseInteractively();
+    }
+
+    rest.onMouseLeave?.(e);
+  };
 
   const inner = (
     <>
@@ -91,6 +141,9 @@ function DropdownNav({
   //  - ArrowDown/ArrowUp cycle (wrap) through nav items.
   //  - ArrowRight jumps to the position-closest item in the content column.
   function handleNavKeyDown(e) {
+    expandInteractively();
+    rest.onKeyDown?.(e);
+
     const navRoot = wrapperRef.current;
     if (!navRoot) return;
     const active = document.activeElement;
@@ -110,6 +163,16 @@ function DropdownNav({
     } else if (e.key === 'ArrowRight') {
       const list = contentRef?.current;
       if (!list) return;
+      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+      const firstItem = items[0];
+      const panel = navRoot.closest('.hangoverDropdown-panel');
+      const searchInput = panel?.querySelector('.hangoverDropdown-search-input');
+      if (active === firstItem && searchInput && isVisible(searchInput)) {
+        e.preventDefault();
+        searchInput.focus();
+        return;
+      }
+
       const contentItems = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible);
       if (contentItems.length === 0) return;
       e.preventDefault();
@@ -130,14 +193,32 @@ function DropdownNav({
 
   if (Comp) {
     return (
-      <Comp ref={wrapperRef} className={colClass} onKeyDown={handleNavKeyDown} {...rest}>
+      <Comp
+        {...rest}
+        ref={wrapperRef}
+        className={colClass}
+        onBlur={handleBlur}
+        onFocus={handleFocus}
+        onKeyDown={handleNavKeyDown}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <nav className="hangoverDropdown-nav">{inner}</nav>
       </Comp>
     );
   }
 
   return (
-    <div ref={wrapperRef} className={colClass} onKeyDown={handleNavKeyDown} {...rest}>
+    <div
+      {...rest}
+      ref={wrapperRef}
+      className={colClass}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      onKeyDown={handleNavKeyDown}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <nav className="hangoverDropdown-nav">{inner}</nav>
     </div>
   );

@@ -9,8 +9,10 @@
   --hangover-color-bg-nav: #F5F6FC;
   --hangover-color-bg-nav-active: #EAECF5;
   --hangover-color-bg-nav-hover: #E0E3EF;
+  --hangover-color-bg-nav-focus: #CFE1FF;
   --hangover-color-bg-hover: #f3f3fe;
   --hangover-color-bg-hover-dark: #eaeaf9;
+  --hangover-color-bg-focus: #D9EAFF;
   --hangover-color-bg-selected: #eef2ff;
   --hangover-color-bg-checked: #EDF8FF;
   --hangover-color-border: #e2e8f0;
@@ -40,8 +42,10 @@
   --hangover-color-bg-nav: #1e2235;
   --hangover-color-bg-nav-hover: #1c3a5c;
   --hangover-color-bg-nav-active: #162f50;
+  --hangover-color-bg-nav-focus: #2b5688;
   --hangover-color-bg-hover: #2f3654;
   --hangover-color-bg-hover-dark: #272b42;
+  --hangover-color-bg-focus: #294f7d;
   --hangover-color-bg-selected: #1c2d55;
   --hangover-color-bg-checked: #1a3050;
   --hangover-color-border: #2a2f4a;
@@ -236,7 +240,7 @@
 }
 .hangoverDropdown-nav-item:focus-visible {
   outline: none;
-  background: var(--hangover-color-bg-nav-hover);
+  background: var(--hangover-color-bg-nav-focus);
 }
 .hangoverDropdown-nav-item.isActive {
   background: var(--hangover-color-bg-nav-active);
@@ -244,6 +248,9 @@
 }
 .hangoverDropdown-nav-item.isActive:hover {
   background: var(--hangover-color-bg-nav-hover);
+}
+.hangoverDropdown-nav-item.isActive:focus-visible {
+  background: var(--hangover-color-bg-nav-focus);
 }
 .hangoverDropdown-nav-item-icon {
   display: flex;
@@ -494,8 +501,7 @@
   background: var(--hangover-color-bg-hover);
 }
 .hangoverDropdown-item:focus-visible {
-  background: var(--hangover-color-bg-hover);
-  box-shadow: none;
+  background: var(--hangover-color-bg-focus);
   outline: none;
 }
 .hangoverDropdown-item.isSelected {
@@ -503,6 +509,10 @@
 }
 .hangoverDropdown-item.isChecked {
   background: var(--hangover-color-bg-checked);
+}
+.hangoverDropdown-item:focus-visible {
+  background: var(--hangover-color-bg-focus);
+  outline: none;
 }
 .hangoverDropdown-item-icon {
   display: flex;

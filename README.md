@@ -126,7 +126,7 @@ Left navigation column. When present, the panel switches to a two-column layout.
 | `allLabel` | `string` | `"All"` | Label for the auto-prepended All item. |
 | `allIcon` | `ReactNode \| FC` | — | Icon for the auto-prepended All item. |
 | `collapsed` | `boolean` | `false` | Start the nav column in collapsed state. |
-| `autoCollapse` | `boolean` | `false` | Automatically collapse the nav column when the viewport is too narrow to fit the full panel width (derived from `--hangover-nav-width` + `--hangover-content-max-width`). |
+| `autoCollapse` | `boolean \| "auto"` | `false` | Automatically collapse the nav column when the viewport is too narrow to fit the full panel width (derived from `--hangover-nav-width` + `--hangover-content-max-width`). Use `"auto"` with `collapsed` to start collapsed and expand while the nav is hovered or keyboard-focused. |
 | `component` | `React component` | — | Custom wrapper component. |
 | `...rest` | `any` | — | Any additional props are forwarded to the nav column wrapper `<div>` (or `component`). |
 
@@ -331,7 +331,7 @@ const config = {
   allLabel?: string,
   allIcon?: ReactNode | FC,
   collapsed?: boolean,
-  autoCollapse?: boolean,
+  autoCollapse?: boolean | 'auto',
 
   // Content column — required
   content: {
@@ -907,6 +907,11 @@ const buttonRef = useRef()
 
 {/* Auto-collapse when the viewport is too narrow */}
 <Dropdown.Navigation autoCollapse>
+  ...
+</Dropdown.Navigation>
+
+{/* Start collapsed, expand on hover or keyboard focus */}
+<Dropdown.Navigation collapsed autoCollapse="auto">
   ...
 </Dropdown.Navigation>
 ```
