@@ -112,6 +112,36 @@
 .hangoverDropdown-panel.hasNoNav .hangoverDropdown-column.forItems {
   max-width: none;
 }
+.hangoverDropdown-panel.isLightGroupHeaders .hangoverDropdown-group-header {
+  background: var(--hangover-color-bg-panel);
+  border-radius: 0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.hangoverDropdown-panel.isLightGroupHeaders .hangoverDropdown-group-header:hover {
+  background: var(--hangover-color-bg-panel);
+}
+.hangoverDropdown-panel.isLightGroupHeaders .hangoverDropdown-group-header:hover .hangoverDropdown-group-header-label {
+  color: var(--hangover-color-text);
+}
+.hangoverDropdown-panel.isLightGroupHeaders .hangoverDropdown-group-header-accent,
+.hangoverDropdown-panel.isLightGroupHeaders .hangoverDropdown-group-header-chevron {
+  display: none;
+}
+.hangoverDropdown-panel.isLightGroupHeaders .hangoverDropdown-group-header-body {
+  padding: 8px 8px 6px 0;
+}
+.hangoverDropdown-panel.isLightGroupHeaders .hangoverDropdown-group-header-label {
+  font-size: var(--hangover-font-size-sm);
+  font-weight: 400;
+  line-height: 16px;
+  text-transform: uppercase;
+  color: var(--hangover-color-text-muted);
+  transition: color var(--hangover-transition);
+  display: block;
+  -webkit-line-clamp: unset;
+}
 .hangoverDropdown-panel-inner {
   display: flex;
   flex: 1;

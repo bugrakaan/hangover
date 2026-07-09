@@ -143,6 +143,47 @@
       }
     }
 
+    // Light group headers — render group headers like section titles
+    // (flat, uppercase, muted, no accent bar, no chevron) instead of the
+    // filled + accented default. Useful when there is no left navigation column.
+    &.isLightGroupHeaders {
+      .hangoverDropdown-group-header {
+        background: var(--hangover-color-bg-panel);
+        border-radius: 0;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+
+        &:hover {
+          background: var(--hangover-color-bg-panel);
+
+          .hangoverDropdown-group-header-label {
+            color: var(--hangover-color-text);
+          }
+        }
+      }
+
+      .hangoverDropdown-group-header-accent,
+      .hangoverDropdown-group-header-chevron {
+        display: none;
+      }
+
+      .hangoverDropdown-group-header-body {
+        padding: 8px 8px 6px 0;
+      }
+
+      .hangoverDropdown-group-header-label {
+        font-size: var(--hangover-font-size-sm);
+        font-weight: 400;
+        line-height: 16px;
+        text-transform: uppercase;
+        color: var(--hangover-color-text-muted);
+        transition: color var(--hangover-transition);
+        display: block;
+        -webkit-line-clamp: unset;
+      }
+    }
+
     &-inner {
       display: flex;
       flex: 1;

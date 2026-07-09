@@ -79,6 +79,7 @@ Root provider. All state lives here.
 | `searchQuery` | `string` | — | Controlled search query. When provided, the internal search state is kept in sync with this value. Use together with `onEvent` (`type: "search"`) to handle changes. |
 | `defaultSearchQuery` | `string` | `""` | Uncontrolled initial search query. Only applied on first render. |
 | `useTranslationFunction` | `(text, payload?) => string` | — | Translation hook. When provided, **every** user-facing string — including built-in defaults — is routed through this function. See [Translation](#translation). |
+| `groupHeaderStyle` | `"accent" \| "light"` | `"accent"` | Group header appearance. `"accent"` is the filled header with a colored accent bar; `"light"` renders headers like section titles (flat, uppercase, muted, no accent) — handy when there is no navigation column. |
 | `onEvent` | `(event) => any` | — | Central event handler. See [Events](#events). |
 | `ref` | `React.Ref` | — | Exposes imperative API. See [Imperative API](#imperative-api). |
 | `...rest` | `any` | — | Any additional props (e.g. `data-*`, `className`, `style`) are forwarded to the root `<div>`. |
@@ -277,6 +278,7 @@ const config = {
   hideOnSelection: boolean,
   onEvent: ({ type, payload, prev }) => any,
   useTranslationFunction: (text, payload) => string,
+  groupHeaderStyle: 'accent' | 'light',
   // ...any extra props are spread onto <Dropdown>
 
   // Trigger — required

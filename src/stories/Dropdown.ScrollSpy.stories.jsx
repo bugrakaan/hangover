@@ -968,3 +968,62 @@ export const DraggableAnchor = {
   },
   render: ({ darkMode }) => <DraggableAnchorDemo darkMode={darkMode} />,
 };
+
+export const GroupHeaderStyle = {
+  name: 'Group Header Style (no nav)',
+  args: {
+    groupHeaderStyle: 'light',
+    darkMode: false,
+  },
+  argTypes: {
+    groupHeaderStyle: {
+      control: 'inline-radio',
+      options: ['accent', 'light'],
+      description: 'Group header appearance when there is no left navigation',
+    },
+    darkMode: { control: 'boolean', description: 'Dark mode' },
+    defaultOpen: { table: { disable: true } },
+    defaultGroupExpanded: { table: { disable: true } },
+    hideOnSelection: { table: { disable: true } },
+    collapsed: { table: { disable: true } },
+    autoCollapse: { table: { disable: true } },
+  },
+  parameters: {
+    layout: 'centered',
+  },
+  decorators: [
+    (Story, context) => (
+      <div style={context.args.darkMode ? { background: '#12141f', padding: '24px', borderRadius: '8px', display: 'inline-block' } : {}}>
+        <Story />
+      </div>
+    ),
+  ],
+  render: ({ groupHeaderStyle, darkMode }) => (
+    <Dropdown displayMode="scroll" defaultOpen defaultGroupExpanded groupHeaderStyle={groupHeaderStyle} darkMode={darkMode}>
+      <Dropdown.Trigger>
+        <button type="button" className="ho-demo-trigger">Select Field</button>
+      </Dropdown.Trigger>
+      <Dropdown.Panel>
+        <Dropdown.Content>
+          <Dropdown.Section forId="fields" title="Fields">
+            <Dropdown.Group label="Citrus">
+              <Dropdown.Item id="gh-orange">Orange</Dropdown.Item>
+              <Dropdown.Item id="gh-lemon">Lemon</Dropdown.Item>
+              <Dropdown.Item id="gh-grapefruit">Grapefruit</Dropdown.Item>
+            </Dropdown.Group>
+            <Dropdown.Group label="Tropical">
+              <Dropdown.Item id="gh-mango">Mango</Dropdown.Item>
+              <Dropdown.Item id="gh-pineapple">Pineapple</Dropdown.Item>
+              <Dropdown.Item id="gh-papaya">Papaya</Dropdown.Item>
+            </Dropdown.Group>
+            <Dropdown.Group label="Berries">
+              <Dropdown.Item id="gh-strawberry">Strawberry</Dropdown.Item>
+              <Dropdown.Item id="gh-blueberry">Blueberry</Dropdown.Item>
+              <Dropdown.Item id="gh-raspberry">Raspberry</Dropdown.Item>
+            </Dropdown.Group>
+          </Dropdown.Section>
+        </Dropdown.Content>
+      </Dropdown.Panel>
+    </Dropdown>
+  ),
+};

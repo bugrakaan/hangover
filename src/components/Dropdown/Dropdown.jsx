@@ -35,6 +35,7 @@ const Dropdown = forwardRef(function Dropdown(
     searchQuery: searchQueryProp,
     defaultSearchQuery: defaultSearchQueryProp = '',
     useTranslationFunction: useTranslationFunctionProp,
+    groupHeaderStyle: groupHeaderStyleProp = 'accent',
     children,
     ...rest
   },
@@ -49,6 +50,7 @@ const Dropdown = forwardRef(function Dropdown(
   const defaultSearchQuery = fromConfig?.defaultSearchQuery ?? defaultSearchQueryProp;
   const controlledSearchQuery = fromConfig?.searchQuery ?? searchQueryProp;
   const translationFn = fromConfig?.useTranslationFunction ?? useTranslationFunctionProp;
+  const groupHeaderStyle = fromConfig?.groupHeaderStyle ?? groupHeaderStyleProp;
 
   // Translation helper. Every user-facing string is routed through this.
   // - With a translation function: returns translationFn(str, payload).
@@ -302,6 +304,8 @@ const Dropdown = forwardRef(function Dropdown(
     setHasNav,
     // i18n
     t,
+    // Appearance
+    groupHeaderStyle,
     // Refs
     triggerRef,
     contentRef,
@@ -325,7 +329,7 @@ const Dropdown = forwardRef(function Dropdown(
     hasNav, displayMode, defaultGroupExpanded, darkMode,
     // all others are stable references
     fireEvent, registerGroupItems, setScrollSpyActive,
-    registerNavLabel, registerSectionRef, t,
+    registerNavLabel, registerSectionRef, t, groupHeaderStyle,
   ]);
 
   const resolvedChildren = (() => {

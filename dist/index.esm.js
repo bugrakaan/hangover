@@ -359,7 +359,8 @@ function DropdownPanel({
     fireEvent,
     hasNav,
     darkMode,
-    t
+    t,
+    groupHeaderStyle
   } = useDropdownContext();
   const panelRef = useRef(null);
   const anchorRef = anchor ?? triggerRef;
@@ -390,7 +391,7 @@ function DropdownPanel({
   }, [isOpen, fireEvent]);
   if (!isOpen) return null;
   const placementClass = placementToClass(actualPlacement);
-  const classNames = `hangoverDropdown-panel ${placementClass} isOpen${hasNav ? '' : ' hasNoNav'}${darkMode ? ' hangoverDropdown--dark' : ''}`;
+  const classNames = `hangoverDropdown-panel ${placementClass} isOpen${hasNav ? '' : ' hasNoNav'}${darkMode ? ' hangoverDropdown--dark' : ''}${groupHeaderStyle === 'light' ? ' isLightGroupHeaders' : ''}`;
   const content = Comp ? /*#__PURE__*/jsx(Comp, {
     ref: panelRef,
     isOpen: isOpen,
@@ -4088,6 +4089,7 @@ const Dropdown$1 = /*#__PURE__*/forwardRef(function Dropdown({
   searchQuery: searchQueryProp,
   defaultSearchQuery: defaultSearchQueryProp = '',
   useTranslationFunction: useTranslationFunctionProp,
+  groupHeaderStyle: groupHeaderStyleProp = 'accent',
   children,
   ...rest
 }, ref) {
@@ -4100,6 +4102,7 @@ const Dropdown$1 = /*#__PURE__*/forwardRef(function Dropdown({
   const defaultSearchQuery = fromConfig?.defaultSearchQuery ?? defaultSearchQueryProp;
   const controlledSearchQuery = fromConfig?.searchQuery ?? searchQueryProp;
   const translationFn = fromConfig?.useTranslationFunction ?? useTranslationFunctionProp;
+  const groupHeaderStyle = fromConfig?.groupHeaderStyle ?? groupHeaderStyleProp;
 
   // Translation helper. Every user-facing string is routed through this.
   // - With a translation function: returns translationFn(str, payload).
@@ -4392,6 +4395,8 @@ const Dropdown$1 = /*#__PURE__*/forwardRef(function Dropdown({
     setHasNav,
     // i18n
     t,
+    // Appearance
+    groupHeaderStyle,
     // Refs
     triggerRef,
     contentRef,
@@ -4411,7 +4416,7 @@ const Dropdown$1 = /*#__PURE__*/forwardRef(function Dropdown({
     registerSectionRef
   }), [isOpen, selectedItem, checkedItems, activeNavId, activeNavLabel, searchQuery, hasNav, displayMode, defaultGroupExpanded, darkMode,
   // all others are stable references
-  fireEvent, registerGroupItems, setScrollSpyActive, registerNavLabel, registerSectionRef, t]);
+  fireEvent, registerGroupItems, setScrollSpyActive, registerNavLabel, registerSectionRef, t, groupHeaderStyle]);
   const resolvedChildren = (() => {
     if (fromConfig && children) {
       console.warn('[Dropdown] `fromConfig` and `children` cannot be used together. ' + '`fromConfig` takes precedence — `children` will be ignored.');

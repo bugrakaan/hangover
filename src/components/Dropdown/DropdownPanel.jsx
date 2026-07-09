@@ -22,7 +22,7 @@ import { placementToClass } from '../../utils/position';
  */
 function DropdownPanel({ placement = 'bottom-start', offset = 8, title, anchor, component: Comp, children, ...rest }) {
   const resolvedOffset = typeof offset === 'string' ? parseFloat(offset) : offset;
-  const { isOpen, triggerRef, fireEvent, hasNav, darkMode, t } = useDropdownContext();
+  const { isOpen, triggerRef, fireEvent, hasNav, darkMode, t, groupHeaderStyle } = useDropdownContext();
   const panelRef = useRef(null);
 
   const anchorRef = anchor ?? triggerRef;
@@ -55,7 +55,7 @@ function DropdownPanel({ placement = 'bottom-start', offset = 8, title, anchor, 
   if (!isOpen) return null;
 
   const placementClass = placementToClass(actualPlacement);
-  const classNames = `hangoverDropdown-panel ${placementClass} isOpen${hasNav ? '' : ' hasNoNav'}${darkMode ? ' hangoverDropdown--dark' : ''}`;
+  const classNames = `hangoverDropdown-panel ${placementClass} isOpen${hasNav ? '' : ' hasNoNav'}${darkMode ? ' hangoverDropdown--dark' : ''}${groupHeaderStyle === 'light' ? ' isLightGroupHeaders' : ''}`;
 
   const content = Comp ? (
     <Comp
