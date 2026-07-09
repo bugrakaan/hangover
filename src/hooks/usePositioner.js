@@ -2,28 +2,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { calculatePosition } from '../utils/position';
 
 /**
- * Returns scrollable ancestors of an element (including window).
- */
-function getScrollableAncestors(el) {
-  const ancestors = [];
-  let current = el.parentElement;
-  while (current && current !== document.documentElement) {
-    const { overflow, overflowY, overflowX } = getComputedStyle(current);
-    if (/auto|scroll/.test(overflow + overflowY + overflowX)) {
-      ancestors.push(current);
-    }
-    current = current.parentElement;
-  }
-  ancestors.push(window);
-  return ancestors;
-}
-
-/**
  * usePositioner
  *
  * Keeps a floating panel anchored to a trigger element.
  * Uses position:fixed so scroll doesn't shift the panel — but recalculates
- * whenever the trigger moves (scroll, resize, layout shift).
+ * whenever the trigger moves (scroll, resize, layout shift, drag, transform).
  *
  * @param {React.RefObject} triggerRef
  * @param {React.RefObject} panelRef
@@ -99,23 +82,46 @@ export function usePositioner(triggerRef, panelRef, placement, offset, isOpen) {
     if (triggerRef.current) ro.observe(triggerRef.current);
     if (panelRef.current)   ro.observe(panelRef.current);
 
-    // Scrollable ancestors
-    const ancestors = triggerRef.current
-      ? getScrollableAncestors(triggerRef.current)
-      : [window];
+    // Capture-phase scroll catches scrolling in ANY ancestor / scroll
+    // container (scroll events don't bubble, but do fire during capture),
+    // and resize covers viewport changes.
+    const scrollOpts = { capture: true, passive: true };
+    window.addEventListener('scroll', scheduleRecalc, scrollOpts);
+    window.addEventListener('resize', scheduleRecalc, { passive: true });
 
-    const opts = { passive: true };
-    ancestors.forEach(el => el.addEventListener('scroll', scheduleRecalc, opts));
-    window.addEventListener('resize', scheduleRecalc, opts);
+    // Aggressive follow: track the anchor every frame so the panel stays glued
+    // even when no scroll/resize/observer event fires — e.g. during a canvas
+    // drag or when the anchor moves via CSS transforms.
+    let followId = null;
+    let prevRect = null;
+    const follow = () => {
+      const anchor = triggerRef.current;
+      if (anchor) {
+        const r = anchor.getBoundingClientRect();
+        if (
+          !prevRect ||
+          r.top !== prevRect.top ||
+          r.left !== prevRect.left ||
+          r.width !== prevRect.width ||
+          r.height !== prevRect.height
+        ) {
+          prevRect = r;
+          recalculate();
+        }
+      }
+      followId = requestAnimationFrame(follow);
+    };
+    followId = requestAnimationFrame(follow);
 
     return () => {
       if (rafId.current !== null) {
         cancelAnimationFrame(rafId.current);
         rafId.current = null;
       }
+      if (followId !== null) cancelAnimationFrame(followId);
       ro.disconnect();
-      ancestors.forEach(el => el.removeEventListener('scroll', scheduleRecalc, opts));
-      window.removeEventListener('resize', scheduleRecalc, opts);
+      window.removeEventListener('scroll', scheduleRecalc, scrollOpts);
+      window.removeEventListener('resize', scheduleRecalc, { passive: true });
     };
   }, [isOpen, recalculate, scheduleRecalc, triggerRef, panelRef]);
 

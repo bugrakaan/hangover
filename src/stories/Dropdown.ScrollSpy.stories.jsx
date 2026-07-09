@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { Dropdown } from '../components/Dropdown';
 
 const AUTO_COLLAPSE_ARG_TYPE = {
@@ -837,4 +838,133 @@ export const SingleEntryLastCategory = {
       </Dropdown.Panel>
     </Dropdown>
   ),
+};
+
+function DraggableAnchorDemo({ darkMode }) {
+  const anchorRef = useRef(null);
+  const dragRef = useRef(null);
+  const [pos, setPos] = useState({ x: 40, y: 40 });
+
+  function handlePointerDown(e) {
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: pos.x,
+      origY: pos.y,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function handlePointerMove(e) {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    setPos({ x: dragRef.current.origX + dx, y: dragRef.current.origY + dy });
+  }
+
+  function handlePointerUp(e) {
+    dragRef.current = null;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+  }
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: 680,
+        height: 460,
+        borderRadius: 12,
+        border: '1px dashed rgba(127,127,127,0.4)',
+        background: darkMode
+          ? 'repeating-linear-gradient(45deg, #14172400, #14172400 18px, #1b1f3211 18px, #1b1f3211 36px), #12141f'
+          : 'repeating-linear-gradient(45deg, #ffffff00, #ffffff00 18px, #00000008 18px, #00000008 36px), #f6f7fb',
+        overflow: 'hidden',
+        userSelect: 'none',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: 12,
+          left: 16,
+          fontSize: 12,
+          color: darkMode ? '#8890b8' : '#6a7288',
+        }}
+      >
+        Drag the pill around — the open panel follows it aggressively.
+      </div>
+
+      <button
+        ref={anchorRef}
+        type="button"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        className="ho-demo-trigger"
+        style={{
+          position: 'absolute',
+          left: pos.x,
+          top: pos.y,
+          cursor: 'grab',
+          touchAction: 'none',
+        }}
+      >
+        ⠿ Drag me
+      </button>
+
+      <Dropdown displayMode="scroll" defaultOpen defaultGroupExpanded hideOnSelection={false} darkMode={darkMode}>
+        <Dropdown.Panel anchor={anchorRef} placement="bottom-start">
+          <Dropdown.Navigation showAll allIcon={IconAll}>
+            <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
+            <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
+            <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>
+          </Dropdown.Navigation>
+          <Dropdown.Content>
+            <Dropdown.Section forId="fruits" title="Fruits">
+              <Dropdown.Group label="Citrus">
+                <Dropdown.Item id="da-orange">Orange</Dropdown.Item>
+                <Dropdown.Item id="da-lemon">Lemon</Dropdown.Item>
+                <Dropdown.Item id="da-grapefruit">Grapefruit</Dropdown.Item>
+              </Dropdown.Group>
+              <Dropdown.Group label="Tropical">
+                <Dropdown.Item id="da-mango">Mango</Dropdown.Item>
+                <Dropdown.Item id="da-pineapple">Pineapple</Dropdown.Item>
+              </Dropdown.Group>
+            </Dropdown.Section>
+            <Dropdown.Section forId="vegetables" title="Vegetables">
+              <Dropdown.Group label="Leafy Greens">
+                <Dropdown.Item id="da-spinach">Spinach</Dropdown.Item>
+                <Dropdown.Item id="da-kale">Kale</Dropdown.Item>
+              </Dropdown.Group>
+            </Dropdown.Section>
+            <Dropdown.Section forId="dairy" title="Dairy">
+              <Dropdown.Group label="Cheese">
+                <Dropdown.Item id="da-cheddar">Cheddar</Dropdown.Item>
+                <Dropdown.Item id="da-brie">Brie</Dropdown.Item>
+              </Dropdown.Group>
+            </Dropdown.Section>
+          </Dropdown.Content>
+        </Dropdown.Panel>
+      </Dropdown>
+    </div>
+  );
+}
+
+export const DraggableAnchor = {
+  name: 'Draggable Anchor (follows on drag)',
+  args: {
+    darkMode: false,
+  },
+  argTypes: {
+    defaultOpen: { table: { disable: true } },
+    defaultGroupExpanded: { table: { disable: true } },
+    hideOnSelection: { table: { disable: true } },
+    collapsed: { table: { disable: true } },
+    autoCollapse: { table: { disable: true } },
+    darkMode: { control: 'boolean', description: 'Dark mode' },
+  },
+  parameters: {
+    layout: 'centered',
+  },
+  render: ({ darkMode }) => <DraggableAnchorDemo darkMode={darkMode} />,
 };
