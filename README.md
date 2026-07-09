@@ -112,6 +112,7 @@ Renders into a portal on `document.body`. Handles positioning, outside-click, an
 | `title` | `string` | — | Optional title bar rendered at the top of the panel (above the nav/content area). Uses the same muted uppercase style as section headings. |
 | `offset` | `number \| string` | `8` | Distance between trigger and panel. Accepts a number (`10`) or a px string (`"10px"`). |
 | `anchor` | `React.RefObject` | — | Ref to an external DOM element used as the positioning anchor. Overrides the built-in trigger ref. Use together with the imperative API when `Dropdown.Trigger` is not in the markup. |
+| `avoid` | `string \| Element \| Ref \| Array<string \| Element \| Ref>` | — | Elements the panel should not overlap. Accepts CSS selector strings, DOM elements, or refs (or an array of them). While auto-placing, the direction with the least overlap against these nodes is preferred. |
 | `component` | `React component` | — | Custom wrapper component. |
 | `...rest` | `any` | — | Any additional props are forwarded to the panel `<div>` (or `component`). |
 
@@ -292,6 +293,7 @@ const config = {
   panel?: {
     placement?: string,  // default 'bottom-start'
     offset?: number,  // default 8
+    avoid?: string | Element | Ref | Array<string | Element | Ref>,
   },
 
   // Navigation column (optional)

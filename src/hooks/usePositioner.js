@@ -2,6 +2,37 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { calculatePosition } from '../utils/position';
 
 /**
+ * Resolve the `avoid` prop into an array of DOMRects.
+ * Accepts a single value or an array of: CSS selector strings, DOM elements,
+ * or refs ({ current: Element }). The anchor and the panel itself (and any
+ * node inside the panel) are excluded so the popover never avoids itself.
+ */
+function resolveAvoidRects(avoid, panelEl, anchorEl) {
+  if (!avoid) return [];
+  const list = Array.isArray(avoid) ? avoid : [avoid];
+  const nodes = new Set();
+
+  for (const item of list) {
+    if (!item) continue;
+    if (typeof item === 'string') {
+      document.querySelectorAll(item).forEach((n) => nodes.add(n));
+    } else if (item.current instanceof Element) {
+      nodes.add(item.current);
+    } else if (item instanceof Element) {
+      nodes.add(item);
+    }
+  }
+
+  const rects = [];
+  nodes.forEach((n) => {
+    if (n === panelEl || n === anchorEl) return;
+    if (panelEl && panelEl.contains(n)) return;
+    rects.push(n.getBoundingClientRect());
+  });
+  return rects;
+}
+
+/**
  * usePositioner
  *
  * Keeps a floating panel anchored to a trigger element.
@@ -15,25 +46,28 @@ import { calculatePosition } from '../utils/position';
  * @param {boolean}         isOpen
  * @returns {{ style: CSSProperties, actualPlacement: string }}
  */
-export function usePositioner(triggerRef, panelRef, placement, offset, isOpen) {
+export function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid) {
   const [actualPlacement, setActualPlacement] = useState(placement);
   const rafId = useRef(null);
   const lastFittedPlacementRef = useRef(placement);
   const resolvedPlacementRef = useRef(placement);
   const initializedRef = useRef(false);
+  const avoidRef = useRef(avoid);
+  avoidRef.current = avoid;
 
   const recalculate = useCallback(() => {
     if (!triggerRef.current || !panelRef.current) return;
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const panelRect   = panelRef.current.getBoundingClientRect();
+    const avoidRects  = resolveAvoidRects(avoidRef.current, panelRef.current, triggerRef.current);
 
-    let result = calculatePosition(triggerRect, panelRect, placement, offset);
+    let result = calculatePosition(triggerRect, panelRect, placement, offset, 8, avoidRects);
 
     if (result.fitted) {
       lastFittedPlacementRef.current = result.actualPlacement;
     } else {
-      result = calculatePosition(triggerRect, panelRect, lastFittedPlacementRef.current, offset);
+      result = calculatePosition(triggerRect, panelRect, lastFittedPlacementRef.current, offset, 8, avoidRects);
     }
 
     // Apply position directly to the DOM — bypasses React re-render for

@@ -9,6 +9,10 @@
  *                               "left"         | "right"
  * @param {number}  offset      gap between trigger and popover (px)
  * @param {number}  viewportPadding  min distance from viewport edge (px)
+ * @param {DOMRect[]} avoidRects  rects the popover should not overlap; among
+ *                                fitting placements the one with the least
+ *                                overlap (then closest to the preferred side)
+ *                                is chosen
  * @returns {{ top: number, left: number, actualPlacement: string }}
  *
  * Coordinates are viewport-relative (for position:fixed).
@@ -18,7 +22,8 @@ export function calculatePosition(
   popoverRect,
   placement = 'bottom-start',
   offset = 8,
-  viewportPadding = 8
+  viewportPadding = 8,
+  avoidRects = []
 ) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -73,6 +78,21 @@ export function calculatePosition(
     );
   }
 
+  // --- Overlap area against the "avoid" rects for a candidate position ---
+  function overlapArea(pos) {
+    if (!avoidRects || avoidRects.length === 0) return 0;
+    const pRight = pos.left + popoverRect.width;
+    const pBottom = pos.top + popoverRect.height;
+    let total = 0;
+    for (const r of avoidRects) {
+      if (!r) continue;
+      const ix = Math.max(0, Math.min(pRight, r.right) - Math.max(pos.left, r.left));
+      const iy = Math.max(0, Math.min(pBottom, r.bottom) - Math.max(pos.top, r.top));
+      total += ix * iy;
+    }
+    return total;
+  }
+
   // --- All 8 candidate placements ---
   const ALL_PLACEMENTS = [
     ['bottom', 'start'], ['bottom', undefined], ['bottom', 'end'],
@@ -87,27 +107,38 @@ export function calculatePosition(
   let resolvedAlign = align;
   let pos = originalPos;
   let fitted = fitsInViewport(originalPos);
+  const originalOverlap = overlapArea(originalPos);
 
-  if (!fitted) {
-    // Among all fitting candidates, pick the one closest to the original position
-    let bestDist = Infinity;
+  // Re-search when the preferred placement doesn't fit, or when it fits but
+  // collides with an avoided node. Among fitting candidates, prefer the least
+  // overlap, then the closest to the original placement.
+  if (!fitted || originalOverlap > 0) {
+    let best = null;
 
     for (const [s, a] of ALL_PLACEMENTS) {
       const p = coords(s, a);
       if (!fitsInViewport(p)) continue;
+      const overlap = overlapArea(p);
       const dx = p.left - originalPos.left;
       const dy = p.top  - originalPos.top;
       const dist = dx * dx + dy * dy;
-      if (dist < bestDist) {
-        bestDist = dist;
-        resolvedSide  = s;
-        resolvedAlign = a;
-        pos = p;
-        fitted = true;
+      if (
+        !best ||
+        overlap < best.overlap - 0.5 ||
+        (Math.abs(overlap - best.overlap) <= 0.5 && dist < best.dist)
+      ) {
+        best = { s, a, p, overlap, dist };
       }
     }
 
-    // if nothing fits, fitted stays false — caller handles fallback
+    if (best) {
+      resolvedSide  = best.s;
+      resolvedAlign = best.a;
+      pos = best.p;
+      fitted = true;
+    }
+
+    // if nothing fits, fitted may stay false — caller handles fallback
   }
 
   // Clamp only when a fitting placement was found

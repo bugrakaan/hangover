@@ -68,11 +68,15 @@ function DropdownTrigger({
  *                               "left"         | "right"
  * @param {number}  offset      gap between trigger and popover (px)
  * @param {number}  viewportPadding  min distance from viewport edge (px)
+ * @param {DOMRect[]} avoidRects  rects the popover should not overlap; among
+ *                                fitting placements the one with the least
+ *                                overlap (then closest to the preferred side)
+ *                                is chosen
  * @returns {{ top: number, left: number, actualPlacement: string }}
  *
  * Coordinates are viewport-relative (for position:fixed).
  */
-function calculatePosition(triggerRect, popoverRect, placement = 'bottom-start', offset = 8, viewportPadding = 8) {
+function calculatePosition(triggerRect, popoverRect, placement = 'bottom-start', offset = 8, viewportPadding = 8, avoidRects = []) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const [side, align] = placement.split('-'); // e.g. "bottom", "start"
@@ -128,6 +132,21 @@ function calculatePosition(triggerRect, popoverRect, placement = 'bottom-start',
     return pos.top >= viewportPadding && pos.top + popoverRect.height <= vh - viewportPadding && pos.left >= viewportPadding && pos.left + popoverRect.width <= vw - viewportPadding;
   }
 
+  // --- Overlap area against the "avoid" rects for a candidate position ---
+  function overlapArea(pos) {
+    if (!avoidRects || avoidRects.length === 0) return 0;
+    const pRight = pos.left + popoverRect.width;
+    const pBottom = pos.top + popoverRect.height;
+    let total = 0;
+    for (const r of avoidRects) {
+      if (!r) continue;
+      const ix = Math.max(0, Math.min(pRight, r.right) - Math.max(pos.left, r.left));
+      const iy = Math.max(0, Math.min(pBottom, r.bottom) - Math.max(pos.top, r.top));
+      total += ix * iy;
+    }
+    return total;
+  }
+
   // --- All 8 candidate placements ---
   const ALL_PLACEMENTS = [['bottom', 'start'], ['bottom', undefined], ['bottom', 'end'], ['top', 'start'], ['top', undefined], ['top', 'end'], ['left', undefined], ['right', undefined]];
   const originalPos = coords(side, align);
@@ -135,25 +154,38 @@ function calculatePosition(triggerRect, popoverRect, placement = 'bottom-start',
   let resolvedAlign = align;
   let pos = originalPos;
   let fitted = fitsInViewport(originalPos);
-  if (!fitted) {
-    // Among all fitting candidates, pick the one closest to the original position
-    let bestDist = Infinity;
+  const originalOverlap = overlapArea(originalPos);
+
+  // Re-search when the preferred placement doesn't fit, or when it fits but
+  // collides with an avoided node. Among fitting candidates, prefer the least
+  // overlap, then the closest to the original placement.
+  if (!fitted || originalOverlap > 0) {
+    let best = null;
     for (const [s, a] of ALL_PLACEMENTS) {
       const p = coords(s, a);
       if (!fitsInViewport(p)) continue;
+      const overlap = overlapArea(p);
       const dx = p.left - originalPos.left;
       const dy = p.top - originalPos.top;
       const dist = dx * dx + dy * dy;
-      if (dist < bestDist) {
-        bestDist = dist;
-        resolvedSide = s;
-        resolvedAlign = a;
-        pos = p;
-        fitted = true;
+      if (!best || overlap < best.overlap - 0.5 || Math.abs(overlap - best.overlap) <= 0.5 && dist < best.dist) {
+        best = {
+          s,
+          a,
+          p,
+          overlap,
+          dist
+        };
       }
     }
+    if (best) {
+      resolvedSide = best.s;
+      resolvedAlign = best.a;
+      pos = best.p;
+      fitted = true;
+    }
 
-    // if nothing fits, fitted stays false — caller handles fallback
+    // if nothing fits, fitted may stay false — caller handles fallback
   }
 
   // Clamp only when a fitting placement was found
@@ -193,6 +225,35 @@ function placementToClass(placement) {
 }
 
 /**
+ * Resolve the `avoid` prop into an array of DOMRects.
+ * Accepts a single value or an array of: CSS selector strings, DOM elements,
+ * or refs ({ current: Element }). The anchor and the panel itself (and any
+ * node inside the panel) are excluded so the popover never avoids itself.
+ */
+function resolveAvoidRects(avoid, panelEl, anchorEl) {
+  if (!avoid) return [];
+  const list = Array.isArray(avoid) ? avoid : [avoid];
+  const nodes = new Set();
+  for (const item of list) {
+    if (!item) continue;
+    if (typeof item === 'string') {
+      document.querySelectorAll(item).forEach(n => nodes.add(n));
+    } else if (item.current instanceof Element) {
+      nodes.add(item.current);
+    } else if (item instanceof Element) {
+      nodes.add(item);
+    }
+  }
+  const rects = [];
+  nodes.forEach(n => {
+    if (n === panelEl || n === anchorEl) return;
+    if (panelEl && panelEl.contains(n)) return;
+    rects.push(n.getBoundingClientRect());
+  });
+  return rects;
+}
+
+/**
  * usePositioner
  *
  * Keeps a floating panel anchored to a trigger element.
@@ -206,21 +267,24 @@ function placementToClass(placement) {
  * @param {boolean}         isOpen
  * @returns {{ style: CSSProperties, actualPlacement: string }}
  */
-function usePositioner(triggerRef, panelRef, placement, offset, isOpen) {
+function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid) {
   const [actualPlacement, setActualPlacement] = useState(placement);
   const rafId = useRef(null);
   const lastFittedPlacementRef = useRef(placement);
   const resolvedPlacementRef = useRef(placement);
   const initializedRef = useRef(false);
+  const avoidRef = useRef(avoid);
+  avoidRef.current = avoid;
   const recalculate = useCallback(() => {
     if (!triggerRef.current || !panelRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const panelRect = panelRef.current.getBoundingClientRect();
-    let result = calculatePosition(triggerRect, panelRect, placement, offset);
+    const avoidRects = resolveAvoidRects(avoidRef.current, panelRef.current, triggerRef.current);
+    let result = calculatePosition(triggerRect, panelRect, placement, offset, 8, avoidRects);
     if (result.fitted) {
       lastFittedPlacementRef.current = result.actualPlacement;
     } else {
-      result = calculatePosition(triggerRect, panelRect, lastFittedPlacementRef.current, offset);
+      result = calculatePosition(triggerRect, panelRect, lastFittedPlacementRef.current, offset, 8, avoidRects);
     }
 
     // Apply position directly to the DOM — bypasses React re-render for
@@ -348,6 +412,7 @@ function DropdownPanel({
   offset = 8,
   title,
   anchor,
+  avoid,
   component: Comp,
   children,
   ...rest
@@ -367,7 +432,7 @@ function DropdownPanel({
   const {
     style,
     actualPlacement
-  } = usePositioner(anchorRef, panelRef, placement, resolvedOffset, isOpen);
+  } = usePositioner(anchorRef, panelRef, placement, resolvedOffset, isOpen, avoid);
 
   // Outside click
   useOutsideClick([anchorRef, panelRef], () => {
