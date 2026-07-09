@@ -148,6 +148,11 @@ function DropdownNav({
     if (!navRoot) return;
     const active = document.activeElement;
 
+    // Contain keys so they don't bleed out and get captured by the host
+    // application's own shortcuts. Escape and Tab pass through for close /
+    // focus movement.
+    if (e.key !== 'Escape' && e.key !== 'Tab') e.stopPropagation();
+
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
       if (items.length === 0) return;

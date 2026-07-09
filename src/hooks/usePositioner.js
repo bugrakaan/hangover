@@ -90,8 +90,8 @@ export function usePositioner(triggerRef, panelRef, placement, offset, isOpen) {
     window.addEventListener('resize', scheduleRecalc, { passive: true });
 
     // Aggressive follow: track the anchor every frame so the panel stays glued
-    // even when no scroll/resize/observer event fires — e.g. during a canvas
-    // drag or when the anchor moves via CSS transforms.
+    // even when no scroll/resize/observer event fires — e.g. when the anchor
+    // moves via a drag interaction or CSS transforms.
     let followId = null;
     let prevRect = null;
     const follow = () => {

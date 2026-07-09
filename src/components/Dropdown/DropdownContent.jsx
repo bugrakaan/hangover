@@ -215,6 +215,11 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
   }
 
   function handleKeyNav(e) {
+    // Contain navigation keys so they don't bleed out and get captured by the
+    // host application's own shortcuts. Escape and Tab are allowed through so
+    // the panel can still close and move focus.
+    if (e.key === 'Escape' || e.key === 'Tab') return;
+    e.stopPropagation();
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       moveItemFocus(1);
@@ -226,8 +231,12 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     }
   }
 
-  // The search input keeps Left/Right for caret movement; only Up/Down navigate.
+  // The search input keeps Left/Right for caret movement; only Up/Down
+  // navigate. All keys are contained (except Escape/Tab) so typing and
+  // navigation never trigger the host application's own shortcuts.
   function handleSearchKeyNav(e) {
+    if (e.key === 'Escape' || e.key === 'Tab') return;
+    e.stopPropagation();
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       moveItemFocus(1);

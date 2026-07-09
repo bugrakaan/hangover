@@ -283,8 +283,8 @@ function usePositioner(triggerRef, panelRef, placement, offset, isOpen) {
     });
 
     // Aggressive follow: track the anchor every frame so the panel stays glued
-    // even when no scroll/resize/observer event fires — e.g. during a canvas
-    // drag or when the anchor moves via CSS transforms.
+    // even when no scroll/resize/observer event fires — e.g. when the anchor
+    // moves via a drag interaction or CSS transforms.
     let followId = null;
     let prevRect = null;
     const follow = () => {
@@ -719,6 +719,11 @@ function DropdownNav({
     const navRoot = wrapperRef.current;
     if (!navRoot) return;
     const active = document.activeElement;
+
+    // Contain keys so they don't bleed out and get captured by the host
+    // application's own shortcuts. Escape and Tab pass through for close /
+    // focus movement.
+    if (e.key !== 'Escape' && e.key !== 'Tab') e.stopPropagation();
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
       if (items.length === 0) return;
@@ -1023,6 +1028,11 @@ function DropdownContent({
     return true;
   }
   function handleKeyNav(e) {
+    // Contain navigation keys so they don't bleed out and get captured by the
+    // host application's own shortcuts. Escape and Tab are allowed through so
+    // the panel can still close and move focus.
+    if (e.key === 'Escape' || e.key === 'Tab') return;
+    e.stopPropagation();
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       moveItemFocus(1);
@@ -1034,8 +1044,12 @@ function DropdownContent({
     }
   }
 
-  // The search input keeps Left/Right for caret movement; only Up/Down navigate.
+  // The search input keeps Left/Right for caret movement; only Up/Down
+  // navigate. All keys are contained (except Escape/Tab) so typing and
+  // navigation never trigger the host application's own shortcuts.
   function handleSearchKeyNav(e) {
+    if (e.key === 'Escape' || e.key === 'Tab') return;
+    e.stopPropagation();
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       moveItemFocus(1);
