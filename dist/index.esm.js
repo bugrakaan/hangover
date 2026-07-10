@@ -311,7 +311,7 @@ function resolveAvoidRects(avoid, panelEl, anchorEl) {
  * @param {boolean}         isOpen
  * @returns {{ style: CSSProperties, actualPlacement: string }}
  */
-function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid, placementPriority) {
+function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid, placementPriority, beforePlace) {
   const [actualPlacement, setActualPlacement] = useState(placement);
   const rafId = useRef(null);
   const lastFittedPlacementRef = useRef(placement);
@@ -321,6 +321,11 @@ function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid, p
   avoidRef.current = avoid;
   const priorityRef = useRef(placementPriority);
   priorityRef.current = placementPriority;
+  const beforePlaceRef = useRef(beforePlace);
+  beforePlaceRef.current = beforePlace;
+  // Cancelled flag: prevents a pending beforePlace promise from triggering
+  // recalculate after the panel has already closed or remounted.
+  const cancelledRef = useRef(false);
   const recalculate = useCallback(() => {
     if (!triggerRef.current || !panelRef.current) return;
     const triggerRect = triggerRef.current.getBoundingClientRect();
@@ -360,16 +365,28 @@ function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid, p
   useEffect(() => {
     if (!isOpen) {
       initializedRef.current = false;
+      cancelledRef.current = true;
       lastFittedPlacementRef.current = placement;
       resolvedPlacementRef.current = placement;
       setActualPlacement(placement);
       return;
     }
+    cancelledRef.current = false;
 
-    // Initial calc after panel mounts (needs 1 rAF so panel has dimensions)
-    rafId.current = requestAnimationFrame(() => {
+    // Initial calc: if a beforePlace hook is provided, wait for it to resolve
+    // before measuring so placement reflects the panel's final dimensions.
+    // Errors from beforePlace are swallowed — placement still proceeds.
+    // All subsequent recalculations (scroll/resize/drag) skip this wait.
+    rafId.current = requestAnimationFrame(async () => {
       rafId.current = null;
-      recalculate();
+      if (beforePlaceRef.current && panelRef.current) {
+        try {
+          await beforePlaceRef.current(panelRef.current);
+        } catch (_) {
+          // intentionally ignored
+        }
+      }
+      if (!cancelledRef.current) recalculate();
     });
 
     // ResizeObserver on trigger + panel
@@ -407,6 +424,7 @@ function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid, p
     };
     followId = requestAnimationFrame(follow);
     return () => {
+      cancelledRef.current = true;
       if (rafId.current !== null) {
         cancelAnimationFrame(rafId.current);
         rafId.current = null;
@@ -461,6 +479,7 @@ function DropdownPanel({
   anchor,
   avoid,
   placementPriority,
+  beforePlace,
   component: Comp,
   children,
   ...rest
@@ -480,7 +499,7 @@ function DropdownPanel({
   const {
     style,
     actualPlacement
-  } = usePositioner(anchorRef, panelRef, placement, resolvedOffset, isOpen, avoid, placementPriority);
+  } = usePositioner(anchorRef, panelRef, placement, resolvedOffset, isOpen, avoid, placementPriority, beforePlace);
 
   // Outside click
   useOutsideClick([anchorRef, panelRef], () => {

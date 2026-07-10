@@ -115,6 +115,7 @@ Renders into a portal on `document.body`. Handles positioning, outside-click, an
 | `anchor` | `React.RefObject` | — | Ref to an external DOM element used as the positioning anchor. Overrides the built-in trigger ref. Use together with the imperative API when `Dropdown.Trigger` is not in the markup. |
 | `avoid` | `string \| Element \| Ref \| Array<string \| Element \| Ref>` | — | Elements the panel should not overlap. Accepts CSS selector strings, DOM elements, or refs (or an array of them). While auto-placing, the direction with the least overlap against these nodes is preferred. |
 | `placementPriority` | `string[]` | — | Order in which sides/placements are tried when auto-placing, e.g. `['bottom', 'top', 'right', 'left']`. The first side that fits and is clear (of the viewport edges and any `avoid` nodes) is used. Bare sides inherit the alignment from `placement`. |
+| `beforePlace` | `(panelEl: HTMLElement) => Promise<void>` | — | Async hook called once, after the panel mounts but before the initial placement is calculated. The positioner waits for the returned promise to settle before measuring and placing — useful when panel content loads asynchronously or its height changes from an external source. Errors are swallowed and placement still proceeds. Subsequent scroll/resize/drag recalculations skip this hook. |
 | `component` | `React component` | — | Custom wrapper component. |
 | `...rest` | `any` | — | Any additional props are forwarded to the panel `<div>` (or `component`). |
 
@@ -298,6 +299,7 @@ const config = {
     offset?: number,  // default 8
     avoid?: string | Element | Ref | Array<string | Element | Ref>,
     placementPriority?: string[],  // e.g. ['bottom','top','right','left']
+    beforePlace?: (panelEl: HTMLElement) => Promise<void>,
   },
 
   // Navigation column (optional)
