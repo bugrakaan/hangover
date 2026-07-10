@@ -46,7 +46,7 @@ function resolveAvoidRects(avoid, panelEl, anchorEl) {
  * @param {boolean}         isOpen
  * @returns {{ style: CSSProperties, actualPlacement: string }}
  */
-export function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid) {
+export function usePositioner(triggerRef, panelRef, placement, offset, isOpen, avoid, placementPriority) {
   const [actualPlacement, setActualPlacement] = useState(placement);
   const rafId = useRef(null);
   const lastFittedPlacementRef = useRef(placement);
@@ -54,6 +54,8 @@ export function usePositioner(triggerRef, panelRef, placement, offset, isOpen, a
   const initializedRef = useRef(false);
   const avoidRef = useRef(avoid);
   avoidRef.current = avoid;
+  const priorityRef = useRef(placementPriority);
+  priorityRef.current = placementPriority;
 
   const recalculate = useCallback(() => {
     if (!triggerRef.current || !panelRef.current) return;
@@ -61,13 +63,14 @@ export function usePositioner(triggerRef, panelRef, placement, offset, isOpen, a
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const panelRect   = panelRef.current.getBoundingClientRect();
     const avoidRects  = resolveAvoidRects(avoidRef.current, panelRef.current, triggerRef.current);
+    const priority    = priorityRef.current;
 
-    let result = calculatePosition(triggerRect, panelRect, placement, offset, 8, avoidRects);
+    let result = calculatePosition(triggerRect, panelRect, placement, offset, 8, avoidRects, priority);
 
     if (result.fitted) {
       lastFittedPlacementRef.current = result.actualPlacement;
     } else {
-      result = calculatePosition(triggerRect, panelRect, lastFittedPlacementRef.current, offset, 8, avoidRects);
+      result = calculatePosition(triggerRect, panelRect, lastFittedPlacementRef.current, offset, 8, avoidRects, priority);
     }
 
     // Apply position directly to the DOM — bypasses React re-render for

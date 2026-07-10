@@ -80,6 +80,7 @@ Root provider. All state lives here.
 | `defaultSearchQuery` | `string` | `""` | Uncontrolled initial search query. Only applied on first render. |
 | `useTranslationFunction` | `(text, payload?) => string` | — | Translation hook. When provided, **every** user-facing string — including built-in defaults — is routed through this function. See [Translation](#translation). |
 | `groupHeaderStyle` | `"accent" \| "light"` | `"accent"` | Group header appearance. `"accent"` is the filled header with a colored accent bar; `"light"` renders headers like section titles (flat, uppercase, muted, no accent) — handy when there is no navigation column. |
+| `autoFocusSearch` | `boolean` | `true` | Focus the search input automatically when the panel opens. Set to `false` to leave focus untouched. |
 | `onEvent` | `(event) => any` | — | Central event handler. See [Events](#events). |
 | `ref` | `React.Ref` | — | Exposes imperative API. See [Imperative API](#imperative-api). |
 | `...rest` | `any` | — | Any additional props (e.g. `data-*`, `className`, `style`) are forwarded to the root `<div>`. |
@@ -113,6 +114,7 @@ Renders into a portal on `document.body`. Handles positioning, outside-click, an
 | `offset` | `number \| string` | `8` | Distance between trigger and panel. Accepts a number (`10`) or a px string (`"10px"`). |
 | `anchor` | `React.RefObject` | — | Ref to an external DOM element used as the positioning anchor. Overrides the built-in trigger ref. Use together with the imperative API when `Dropdown.Trigger` is not in the markup. |
 | `avoid` | `string \| Element \| Ref \| Array<string \| Element \| Ref>` | — | Elements the panel should not overlap. Accepts CSS selector strings, DOM elements, or refs (or an array of them). While auto-placing, the direction with the least overlap against these nodes is preferred. |
+| `placementPriority` | `string[]` | — | Order in which sides/placements are tried when auto-placing, e.g. `['bottom', 'top', 'right', 'left']`. The first side that fits and is clear (of the viewport edges and any `avoid` nodes) is used. Bare sides inherit the alignment from `placement`. |
 | `component` | `React component` | — | Custom wrapper component. |
 | `...rest` | `any` | — | Any additional props are forwarded to the panel `<div>` (or `component`). |
 
@@ -280,6 +282,7 @@ const config = {
   onEvent: ({ type, payload, prev }) => any,
   useTranslationFunction: (text, payload) => string,
   groupHeaderStyle: 'accent' | 'light',
+  autoFocusSearch: boolean,   // default true
   // ...any extra props are spread onto <Dropdown>
 
   // Trigger — required
@@ -294,6 +297,7 @@ const config = {
     placement?: string,  // default 'bottom-start'
     offset?: number,  // default 8
     avoid?: string | Element | Ref | Array<string | Element | Ref>,
+    placementPriority?: string[],  // e.g. ['bottom','top','right','left']
   },
 
   // Navigation column (optional)

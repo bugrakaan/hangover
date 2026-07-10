@@ -25,9 +25,17 @@ function DefaultSearchIcon() {
  *  children           DropdownSection / DropdownGroup / DropdownItem elements
  */
 function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to show here', component: Comp, children, ...rest }) {
-  const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, t } = useDropdownContext();
+  const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, t, isOpen, autoFocusSearch } = useDropdownContext();
   const searchInputRef = useRef(null);
   const bottomPadRef = useRef(0);
+
+  // Auto-focus the search input when the panel opens (opt-out via
+  // autoFocusSearch={false} on <Dropdown>).
+  useEffect(() => {
+    if (!isOpen || !autoFocusSearch) return;
+    const el = searchInputRef.current;
+    if (el) el.focus({ preventScroll: true });
+  }, [isOpen, autoFocusSearch]);
 
   // Scroll spy: update active nav based on scroll position
   useEffect(() => {

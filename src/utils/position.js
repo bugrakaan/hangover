@@ -13,6 +13,8 @@
  *                                fitting placements the one with the least
  *                                overlap (then closest to the preferred side)
  *                                is chosen
+ * @param {string[]} priority    ordered list of sides/placements to try first
+ *                                when auto-placing, e.g. ['bottom','top','right','left']
  * @returns {{ top: number, left: number, actualPlacement: string }}
  *
  * Coordinates are viewport-relative (for position:fixed).
@@ -23,7 +25,8 @@ export function calculatePosition(
   placement = 'bottom-start',
   offset = 8,
   viewportPadding = 8,
-  avoidRects = []
+  avoidRects = [],
+  priority = []
 ) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -109,32 +112,63 @@ export function calculatePosition(
   let fitted = fitsInViewport(originalPos);
   const originalOverlap = overlapArea(originalPos);
 
-  // Re-search when the preferred placement doesn't fit, or when it fits but
-  // collides with an avoided node. Among fitting candidates, prefer the least
-  // overlap, then the closest to the original placement.
-  if (!fitted || originalOverlap > 0) {
-    let best = null;
+  const usePriority = Array.isArray(priority) && priority.length > 0;
 
-    for (const [s, a] of ALL_PLACEMENTS) {
+  // Re-search when a priority order is supplied, or when the preferred
+  // placement doesn't fit / collides with an avoided node.
+  if (usePriority || !fitted || originalOverlap > 0) {
+    // Build the ordered list of candidate placements to try.
+    const ordered = [];
+    const seen = new Set();
+    const push = (s, a) => {
+      const key = s + ':' + a;
+      if (seen.has(key)) return;
+      seen.add(key);
+      ordered.push([s, a]);
+    };
+
+    if (usePriority) {
+      for (const entry of priority) {
+        if (typeof entry !== 'string') continue;
+        const [ps, pa] = entry.split('-');
+        if (ps === 'left' || ps === 'right') push(ps, undefined);
+        else push(ps, pa || align); // inherit preferred alignment for top/bottom
+      }
+      // Append the remaining placements as a final fallback.
+      for (const [s, a] of ALL_PLACEMENTS) push(s, a);
+    } else {
+      // Preferred placement first, then the rest ordered by distance to it.
+      const rest = ALL_PLACEMENTS
+        .map(([s, a]) => ({ s, a, p: coords(s, a) }))
+        .sort((x, y) => {
+          const dx1 = x.p.left - originalPos.left, dy1 = x.p.top - originalPos.top;
+          const dx2 = y.p.left - originalPos.left, dy2 = y.p.top - originalPos.top;
+          return (dx1 * dx1 + dy1 * dy1) - (dx2 * dx2 + dy2 * dy2);
+        });
+      for (const { s, a } of rest) push(s, a);
+    }
+
+    let bestFit = null;     // fitting candidate with the least overlap
+    let firstClear = null;  // first fitting candidate (in order) with no overlap
+
+    for (const [s, a] of ordered) {
       const p = coords(s, a);
       if (!fitsInViewport(p)) continue;
       const overlap = overlapArea(p);
-      const dx = p.left - originalPos.left;
-      const dy = p.top  - originalPos.top;
-      const dist = dx * dx + dy * dy;
-      if (
-        !best ||
-        overlap < best.overlap - 0.5 ||
-        (Math.abs(overlap - best.overlap) <= 0.5 && dist < best.dist)
-      ) {
-        best = { s, a, p, overlap, dist };
+      if (overlap === 0) {
+        firstClear = { s, a, p };
+        break;
+      }
+      if (bestFit === null || overlap < bestFit.overlap) {
+        bestFit = { s, a, p, overlap };
       }
     }
 
-    if (best) {
-      resolvedSide  = best.s;
-      resolvedAlign = best.a;
-      pos = best.p;
+    const chosen = firstClear || bestFit;
+    if (chosen) {
+      resolvedSide  = chosen.s;
+      resolvedAlign = chosen.a;
+      pos = chosen.p;
       fitted = true;
     }
 

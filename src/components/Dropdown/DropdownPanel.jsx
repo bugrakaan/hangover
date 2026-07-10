@@ -20,7 +20,7 @@ import { placementToClass } from '../../utils/position';
  *  component   optional custom wrapper component
  *  children
  */
-function DropdownPanel({ placement = 'bottom-start', offset = 8, title, anchor, avoid, component: Comp, children, ...rest }) {
+function DropdownPanel({ placement = 'bottom-start', offset = 8, title, anchor, avoid, placementPriority, component: Comp, children, ...rest }) {
   const resolvedOffset = typeof offset === 'string' ? parseFloat(offset) : offset;
   const { isOpen, triggerRef, fireEvent, hasNav, darkMode, t, groupHeaderStyle } = useDropdownContext();
   const panelRef = useRef(null);
@@ -33,7 +33,8 @@ function DropdownPanel({ placement = 'bottom-start', offset = 8, title, anchor, 
     placement,
     resolvedOffset,
     isOpen,
-    avoid
+    avoid,
+    placementPriority
   );
 
   // Outside click
