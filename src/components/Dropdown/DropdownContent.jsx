@@ -62,6 +62,9 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
   // The item currently highlighted while the search input keeps DOM focus
   // (virtual / aria-activedescendant navigation). null when no item is active.
   const activeItemRef = useRef(null);
+  // Timestamp until which scroll-spy is suppressed, so a programmatic scroll
+  // from keyboard navigation doesn't override the category we set explicitly.
+  const spyLockRef = useRef(0);
 
   // Auto-focus the search input when the panel opens (opt-out via
   // autoFocusSearch={false} on <Dropdown>).
@@ -79,6 +82,18 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     return first?.dataset.sectionFor ?? '__all__';
   }
 
+  // Suppress scroll-spy briefly (during a programmatic keyboard scroll).
+  function lockSpy() {
+    spyLockRef.current = Date.now() + 500;
+  }
+
+  // Set the active nav category from an item's enclosing section (scroll mode).
+  function setNavFromItem(el) {
+    if (displayMode !== 'scroll') return;
+    const sectionId = el?.closest('[data-section-for]')?.dataset.sectionFor;
+    if (sectionId) setScrollSpyActive(sectionId);
+  }
+
   // Scroll spy: update active nav based on scroll position. Disabled while a
   // search is active — during search the active nav is driven by the currently
   // highlighted result's category instead of the scroll position.
@@ -89,6 +104,7 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     if (!scrollEl) return;
 
     function updateSpy() {
+      if (Date.now() < spyLockRef.current) return;
       const { scrollTop, scrollHeight, clientHeight } = scrollEl;
 
       // En üstteyken → All (veya All yoksa ilk section)
@@ -245,10 +261,7 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     searchInputRef.current?.setAttribute('aria-activedescendant', el.id);
     // Reflect the highlighted item's category as active in the left nav
     // (scroll mode only) so the nav follows the selection, not the scroll.
-    if (displayMode === 'scroll') {
-      const sectionId = el.closest('[data-section-for]')?.dataset.sectionFor;
-      if (sectionId) setScrollSpyActive(sectionId);
-    }
+    setNavFromItem(el);
     scrollItemIntoView(el);
   }
 
@@ -321,9 +334,13 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     if (!el) return;
     if (el === searchInputRef.current) {
       el.focus();
+      lockSpy();
+      setScrollSpyActive(topNavId());
       contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       el.focus({ preventScroll: true });
+      lockSpy();
+      setNavFromItem(el);
       scrollItemIntoView(el);
     }
   }

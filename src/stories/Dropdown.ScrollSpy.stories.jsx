@@ -1011,81 +1011,78 @@ export const GroupHeaderStyle = {
           <Dropdown.NavigationItem id="meat" icon={IconMeat}>Meat</Dropdown.NavigationItem>
         </Dropdown.Navigation>
         <Dropdown.Content>
-          <Dropdown.Section forId="fruits" title="Fruits">
-            <Dropdown.Group label="Citrus">
+          <Dropdown.Section forId="fruits">
+            <Dropdown.Group label="Fruits">
+              <Dropdown.Item id="gh-apple">Apple</Dropdown.Item>
+              <Dropdown.Item id="gh-banana">Banana</Dropdown.Item>
               <Dropdown.Item id="gh-orange">Orange</Dropdown.Item>
               <Dropdown.Item id="gh-lemon">Lemon</Dropdown.Item>
               <Dropdown.Item id="gh-lime">Lime</Dropdown.Item>
               <Dropdown.Item id="gh-grapefruit">Grapefruit</Dropdown.Item>
-              <Dropdown.Item id="gh-mandarin">Mandarin</Dropdown.Item>
-              <Dropdown.Item id="gh-tangerine">Tangerine</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Tropical">
               <Dropdown.Item id="gh-mango">Mango</Dropdown.Item>
               <Dropdown.Item id="gh-pineapple">Pineapple</Dropdown.Item>
               <Dropdown.Item id="gh-papaya">Papaya</Dropdown.Item>
-              <Dropdown.Item id="gh-guava">Guava</Dropdown.Item>
-              <Dropdown.Item id="gh-passionfruit">Passion Fruit</Dropdown.Item>
-              <Dropdown.Item id="gh-lychee">Lychee</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Berries">
               <Dropdown.Item id="gh-strawberry">Strawberry</Dropdown.Item>
               <Dropdown.Item id="gh-blueberry">Blueberry</Dropdown.Item>
               <Dropdown.Item id="gh-raspberry">Raspberry</Dropdown.Item>
-              <Dropdown.Item id="gh-blackberry">Blackberry</Dropdown.Item>
-              <Dropdown.Item id="gh-cranberry">Cranberry</Dropdown.Item>
+              <Dropdown.Item id="gh-watermelon">Watermelon</Dropdown.Item>
+              <Dropdown.Item id="gh-kiwi">Kiwi</Dropdown.Item>
             </Dropdown.Group>
           </Dropdown.Section>
-          <Dropdown.Section forId="vegetables" title="Vegetables">
-            <Dropdown.Group label="Leafy Greens">
+          <Dropdown.Section forId="vegetables">
+            <Dropdown.Group label="Vegetables">
               <Dropdown.Item id="gh-spinach">Spinach</Dropdown.Item>
               <Dropdown.Item id="gh-kale">Kale</Dropdown.Item>
               <Dropdown.Item id="gh-arugula">Arugula</Dropdown.Item>
               <Dropdown.Item id="gh-lettuce">Romaine Lettuce</Dropdown.Item>
               <Dropdown.Item id="gh-chard">Swiss Chard</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Root Vegetables">
               <Dropdown.Item id="gh-carrot">Carrot</Dropdown.Item>
               <Dropdown.Item id="gh-beet">Beet</Dropdown.Item>
               <Dropdown.Item id="gh-parsnip">Parsnip</Dropdown.Item>
               <Dropdown.Item id="gh-radish">Radish</Dropdown.Item>
               <Dropdown.Item id="gh-turnip">Turnip</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Nightshades">
               <Dropdown.Item id="gh-tomato">Tomato</Dropdown.Item>
               <Dropdown.Item id="gh-eggplant">Eggplant</Dropdown.Item>
               <Dropdown.Item id="gh-bellpepper">Bell Pepper</Dropdown.Item>
               <Dropdown.Item id="gh-potato">Potato</Dropdown.Item>
+              <Dropdown.Item id="gh-broccoli">Broccoli</Dropdown.Item>
+              <Dropdown.Item id="gh-cauliflower">Cauliflower</Dropdown.Item>
+              <Dropdown.Item id="gh-zucchini">Zucchini</Dropdown.Item>
+              <Dropdown.Item id="gh-cucumber">Cucumber</Dropdown.Item>
+              <Dropdown.Item id="gh-onion">Onion</Dropdown.Item>
+              <Dropdown.Item id="gh-garlic">Garlic</Dropdown.Item>
             </Dropdown.Group>
           </Dropdown.Section>
-          <Dropdown.Section forId="dairy" title="Dairy">
-            <Dropdown.Group label="Cheese">
+          <Dropdown.Section forId="dairy">
+            <Dropdown.Group label="Dairy">
               <Dropdown.Item id="gh-cheddar">Cheddar</Dropdown.Item>
               <Dropdown.Item id="gh-brie">Brie</Dropdown.Item>
               <Dropdown.Item id="gh-gouda">Gouda</Dropdown.Item>
               <Dropdown.Item id="gh-parmesan">Parmesan</Dropdown.Item>
               <Dropdown.Item id="gh-mozzarella">Mozzarella</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Milk & Cream">
               <Dropdown.Item id="gh-whole-milk">Whole Milk</Dropdown.Item>
               <Dropdown.Item id="gh-heavy-cream">Heavy Cream</Dropdown.Item>
               <Dropdown.Item id="gh-buttermilk">Buttermilk</Dropdown.Item>
               <Dropdown.Item id="gh-yogurt">Greek Yogurt</Dropdown.Item>
+              <Dropdown.Item id="gh-butter">Butter</Dropdown.Item>
+              <Dropdown.Item id="gh-cottage">Cottage Cheese</Dropdown.Item>
+              <Dropdown.Item id="gh-sour-cream">Sour Cream</Dropdown.Item>
             </Dropdown.Group>
           </Dropdown.Section>
-          <Dropdown.Section forId="meat" title="Meat">
-            <Dropdown.Group label="Poultry">
+          <Dropdown.Section forId="meat">
+            <Dropdown.Group label="Meat">
               <Dropdown.Item id="gh-chicken">Chicken</Dropdown.Item>
               <Dropdown.Item id="gh-turkey">Turkey</Dropdown.Item>
               <Dropdown.Item id="gh-duck">Duck</Dropdown.Item>
               <Dropdown.Item id="gh-quail">Quail</Dropdown.Item>
-            </Dropdown.Group>
-            <Dropdown.Group label="Red Meat">
               <Dropdown.Item id="gh-beef">Beef</Dropdown.Item>
               <Dropdown.Item id="gh-pork">Pork</Dropdown.Item>
               <Dropdown.Item id="gh-lamb">Lamb</Dropdown.Item>
               <Dropdown.Item id="gh-venison">Venison</Dropdown.Item>
               <Dropdown.Item id="gh-veal">Veal</Dropdown.Item>
+              <Dropdown.Item id="gh-bacon">Bacon</Dropdown.Item>
+              <Dropdown.Item id="gh-sausage">Sausage</Dropdown.Item>
+              <Dropdown.Item id="gh-ham">Ham</Dropdown.Item>
             </Dropdown.Group>
           </Dropdown.Section>
         </Dropdown.Content>
