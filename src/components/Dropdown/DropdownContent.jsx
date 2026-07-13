@@ -3,15 +3,14 @@ import { useDropdownContext } from '../../context/DropdownContext';
 import { isVisible, closestByVerticalPosition, scrollWithin } from '../../utils/keyboardNav';
 
 // Score how well an item's label matches the query. Higher is better.
-// Exact matches rank above prefix matches, which rank above substring
-// matches, which rank above fuzzy-only matches — so the most relevant result
-// is highlighted even if it appears lower in the (position-preserving) list.
+// Ranking is by match quality only — exact > prefix > substring > fuzzy — so
+// that items within the same tier keep their original list order (the caller
+// iterates in DOM order and keeps the first item with the top score).
 function matchScore(label, query) {
-  if (label === query) return 1000;
-  if (label.startsWith(query)) return 500 - label.length;
-  const idx = label.indexOf(query);
-  if (idx !== -1) return 200 - idx - label.length * 0.1;
-  return -label.length;
+  if (label === query) return 3;
+  if (label.startsWith(query)) return 2;
+  if (label.includes(query)) return 1;
+  return 0;
 }
 
 // Pick the best-matching element among the visible items for the given query.
@@ -259,10 +258,10 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     const list = contentRef.current;
     if (!list || !el) return;
 
-    // Offset by the sticky section header + the gap between items so the item
-    // stays fully visible with breathing room when navigating.
-    const stickyEl = list.querySelector('.hangoverDropdown-section-title');
-    const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
+    // Offset by the sticky headers (section title + a sticky group header) plus
+    // the gap between items so the item stays fully visible with breathing room
+    // and never ends up hidden underneath a pinned header.
+    const stickyHeight = stickyOffsetFor(el);
     const gap = el.parentElement
       ? parseFloat(getComputedStyle(el.parentElement).rowGap) || 0
       : 0;
@@ -270,13 +269,28 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     scrollWithin(list, el, stickyHeight + gap, gap);
   }
 
-  // Scroll so `el` sits at the very top of the list (just below the sticky
-  // section header). Used to bring the first search match to the top.
+  // Total height of sticky headers pinned at the top of the list that can
+  // overlap an item: the section title (when present) plus the item's own
+  // group header when it is sticky (e.g. the "light" group-header style).
+  function stickyOffsetFor(el) {
+    const list = contentRef.current;
+    if (!list) return 0;
+    let offset = 0;
+    const sectionTitle = list.querySelector('.hangoverDropdown-section-title');
+    if (sectionTitle) offset += sectionTitle.offsetHeight;
+    const header = el?.closest('.hangoverDropdown-group')?.querySelector('.hangoverDropdown-group-header');
+    if (header && getComputedStyle(header).position === 'sticky') {
+      offset += header.offsetHeight;
+    }
+    return offset;
+  }
+
+  // Scroll so `el` sits at the very top of the list (just below any sticky
+  // headers). Used to bring the first search match to the top.
   function scrollItemToTop(el) {
     const list = contentRef.current;
     if (!list || !el) return;
-    const stickyEl = list.querySelector('.hangoverDropdown-section-title');
-    const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
+    const stickyHeight = stickyOffsetFor(el);
     const containerTop = list.getBoundingClientRect().top;
     const elTop = el.getBoundingClientRect().top;
     const offset = elTop - containerTop + list.scrollTop - stickyHeight;
