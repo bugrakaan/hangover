@@ -37,6 +37,7 @@ const Dropdown = forwardRef(function Dropdown(
     useTranslationFunction: useTranslationFunctionProp,
     groupHeaderStyle: groupHeaderStyleProp = 'accent',
     autoFocusSearch: autoFocusSearchProp = true,
+    hideEmptyResults: hideEmptyResultsProp = true,
     children,
     ...rest
   },
@@ -53,6 +54,7 @@ const Dropdown = forwardRef(function Dropdown(
   const translationFn = fromConfig?.useTranslationFunction ?? useTranslationFunctionProp;
   const groupHeaderStyle = fromConfig?.groupHeaderStyle ?? groupHeaderStyleProp;
   const autoFocusSearch = fromConfig?.autoFocusSearch ?? autoFocusSearchProp;
+  const hideEmptyResults = fromConfig?.hideEmptyResults ?? hideEmptyResultsProp;
 
   // Translation helper. Every user-facing string is routed through this.
   // - With a translation function: returns translationFn(str, payload).
@@ -131,6 +133,27 @@ const Dropdown = forwardRef(function Dropdown(
     } else {
       sectionRefs.current.delete(forId);
     }
+  }, []);
+
+  // Section match registry: which sections have items matching the current
+  // search. Stored in state so nav items re-render (to disable/enable) when
+  // matches change. Sections without matches let the nav column dim them out.
+  const [sectionMatches, setSectionMatches] = useState(() => new Map());
+  const setSectionMatch = useCallback((forId, hasMatch) => {
+    setSectionMatches(prev => {
+      if (prev.get(forId) === hasMatch) return prev;
+      const next = new Map(prev);
+      next.set(forId, hasMatch);
+      return next;
+    });
+  }, []);
+  const unregisterSectionMatch = useCallback((forId) => {
+    setSectionMatches(prev => {
+      if (!prev.has(forId)) return prev;
+      const next = new Map(prev);
+      next.delete(forId);
+      return next;
+    });
   }, []);
 
   /**
@@ -310,6 +333,7 @@ const Dropdown = forwardRef(function Dropdown(
     groupHeaderStyle,
     // Behavior
     autoFocusSearch,
+    hideEmptyResults,
     // Refs
     triggerRef,
     contentRef,
@@ -327,6 +351,9 @@ const Dropdown = forwardRef(function Dropdown(
     registerNavLabel,
     sectionRefs: sectionRefs.current,
     registerSectionRef,
+    sectionMatches,
+    setSectionMatch,
+    unregisterSectionMatch,
   }), [
     isOpen, selectedItem, checkedItems,
     activeNavId, activeNavLabel, searchQuery,
@@ -334,6 +361,7 @@ const Dropdown = forwardRef(function Dropdown(
     // all others are stable references
     fireEvent, registerGroupItems, setScrollSpyActive,
     registerNavLabel, registerSectionRef, t, groupHeaderStyle, autoFocusSearch,
+    sectionMatches, setSectionMatch, unregisterSectionMatch, hideEmptyResults,
   ]);
   const resolvedChildren = (() => {
     if (fromConfig && children) {

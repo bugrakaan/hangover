@@ -81,6 +81,7 @@ Root provider. All state lives here.
 | `useTranslationFunction` | `(text, payload?) => string` | — | Translation hook. When provided, **every** user-facing string — including built-in defaults — is routed through this function. See [Translation](#translation). |
 | `groupHeaderStyle` | `"accent" \| "light"` | `"accent"` | Group header appearance. `"accent"` is the filled header with a colored accent bar; `"light"` renders headers like section titles (flat, uppercase, muted, no accent) — handy when there is no navigation column. |
 | `autoFocusSearch` | `boolean` | `true` | Focus the search input automatically when the panel opens. Set to `false` to leave focus untouched. |
+| `hideEmptyResults` | `boolean` | `true` | While searching, completely remove groups that have no matching items (instead of showing a "No results" placeholder), hide the titles of sections with no matches, and disable those categories in the navigation column. Set to `false` to keep every group/section rendered and show the per-group "No results" text instead. |
 | `onEvent` | `(event) => any` | — | Central event handler. See [Events](#events). |
 | `ref` | `React.Ref` | — | Exposes imperative API. See [Imperative API](#imperative-api). |
 | `...rest` | `any` | — | Any additional props (e.g. `data-*`, `className`, `style`) are forwarded to the root `<div>`. |
@@ -230,7 +231,7 @@ A collapsible group of items with a colored left-border accent.
 | `showSelectAll` | `boolean` | `false` | Shows a "Select all" checkbox item inside the group. |
 | `selectAllPosition` | `"top" \| "bottom"` | `"bottom"` | Position of the select-all item. |
 | `emptyText` | `string` | `"Nothing to show here"` | Text shown when the group has no children. |
-| `noResultsText` | `string` | `"No results"` | Text shown when a search query returns no matching items inside this group. |
+| `noResultsText` | `string` | `"No results"` | Text shown when a search query returns no matching items inside this group. Only applies when `hideEmptyResults={false}` on `<Dropdown>`; otherwise the group is removed entirely while filtering. |
 | `component` | `React component` | — | Custom wrapper component. |
 | `...rest` | `any` | — | Any additional props are forwarded to the group wrapper `<div>` (or `component`). |
 
@@ -284,6 +285,7 @@ const config = {
   useTranslationFunction: (text, payload) => string,
   groupHeaderStyle: 'accent' | 'light',
   autoFocusSearch: boolean,   // default true
+  hideEmptyResults: boolean,  // default true
   // ...any extra props are spread onto <Dropdown>
 
   // Trigger — required

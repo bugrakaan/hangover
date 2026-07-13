@@ -66,7 +66,7 @@ function DropdownGroup({
   children,
   ...rest
 }) {
-  const { fireEvent, checkedItems, firstGroupClaimedRef, defaultGroupExpanded, displayMode, activeNavId, registerGroupItems, searchQuery, t } = useDropdownContext();
+  const { fireEvent, checkedItems, firstGroupClaimedRef, defaultGroupExpanded, displayMode, activeNavId, registerGroupItems, searchQuery, hideEmptyResults, t } = useDropdownContext();
 
   // Determine initial expanded state
   const expandedInitRef = useRef(null);
@@ -222,6 +222,12 @@ function DropdownGroup({
   const hasChildren = Children.count(children) > 0;
 
   const hasVisibleItems = !searchQuery || visibleItemIds.size > 0;
+
+  // While filtering, a group with no matching items is removed entirely
+  // (no "No results" placeholder is rendered for it) — unless hideEmptyResults
+  // is disabled, in which case the "No results" placeholder is shown instead.
+  const isFilteredOut = hideEmptyResults && Boolean(searchQuery?.trim()) && hasChildren && visibleItemIds.size === 0;
+  if (isFilteredOut) return null;
 
   const items = (
     <div className={`hangoverDropdown-group-items-wrap${isExpanded ? ' isExpanded' : ''}`}>

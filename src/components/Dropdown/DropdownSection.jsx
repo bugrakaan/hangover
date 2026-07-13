@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Children, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDropdownContext, SectionContext, SectionControlContext } from '../../context/DropdownContext';
+import { getMatchingItemIds } from '../../utils/fuzzySearch';
 
 /**
  * DropdownSection
@@ -11,9 +12,37 @@ import { useDropdownContext, SectionContext, SectionControlContext } from '../..
  *  children DropdownGroup elements
  */
 function DropdownSection({ for: forProp, forId: forIdProp, title, children, ...rest }) {
-  const { activeNavId, displayMode, registerSectionRef, hasNav, t } = useDropdownContext();
+  const { activeNavId, displayMode, registerSectionRef, hasNav, t, searchQuery, setSectionMatch, unregisterSectionMatch, hideEmptyResults } = useDropdownContext();
   const sectionRef = useRef(null);
   const forId = forProp || forIdProp || '__all__';
+
+  // Whether this section has any item matching the current search. Used to
+  // hide the section title and to let the nav column disable irrelevant
+  // categories.
+  const hasMatch = useMemo(() => {
+    if (!searchQuery?.trim()) return true;
+    const items = [];
+    Children.forEach(children, (group) => {
+      Children.forEach(group?.props?.children, (item) => {
+        const id = item?.props?.id;
+        if (!id) return;
+        items.push({
+          id,
+          label: typeof item?.props?.children === 'string' ? t(item.props.children) : '',
+        });
+      });
+    });
+    const matches = getMatchingItemIds(items, searchQuery);
+    return !matches || matches.size > 0;
+  }, [children, searchQuery, t]);
+
+  // Report match status to the dropdown so the nav column can react.
+  useEffect(() => {
+    if (forId === '__all__') return;
+    if (!hideEmptyResults) return;
+    setSectionMatch(forId, hasMatch);
+    return () => unregisterSectionMatch(forId);
+  }, [forId, hasMatch, hideEmptyResults, setSectionMatch, unregisterSectionMatch]);
 
   // Group registry for expand/collapse all
   const groupTogglersRef = useRef(new Map());
@@ -67,7 +96,7 @@ function DropdownSection({ for: forProp, forId: forIdProp, title, children, ...r
     <SectionContext.Provider value={{ forId }}>
       <SectionControlContext.Provider value={sectionControlValue}>
         <div className="hangoverDropdown-section" ref={sectionRef} data-section-for={forId} {...rest}>
-          {title && hasNav && !(displayMode === 'tab' && activeNavId === '__all__') && (
+          {title && hasNav && (hasMatch || !hideEmptyResults) && !(displayMode === 'tab' && activeNavId === '__all__') && (
             <div
               className={`hangoverDropdown-section-title${hasGroups ? ' isClickable' : ''}`}
               onClick={hasGroups ? handleToggleAll : undefined}

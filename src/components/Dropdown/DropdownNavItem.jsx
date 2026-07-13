@@ -21,11 +21,18 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
     contentRef,
     sectionRefs,
     registerNavLabel,
+    searchQuery,
+    sectionMatches,
+    hideEmptyResults,
     t,
   } = useDropdownContext();
 
   const isActive = activeNavId === id;
   const buttonRef = useRef(null);
+
+  // While filtering, categories with no matching items are disabled. The "All"
+  // item is never disabled. Skipped entirely when hideEmptyResults is off.
+  const isDisabled = hideEmptyResults && Boolean(searchQuery?.trim()) && id !== '__all__' && sectionMatches.get(id) === false;
 
   useEffect(() => {
     registerNavLabel(id, typeof children === 'string' ? children : '');
@@ -63,6 +70,7 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
   }, [isActive]);
 
   function handleClick() {
+    if (isDisabled) return;
     fireEvent('navChange', { id });
 
     if (displayMode === 'scroll') {
@@ -88,6 +96,7 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
     onClick: () => { handleClick(); userOnClick?.(); },
     id,
     children,
+    disabled: isDisabled,
   };
 
   if (Comp) {
@@ -98,8 +107,10 @@ function DropdownNavItem({ id, icon, children, component: Comp, ...rest }) {
     <button
       type="button"
       ref={buttonRef}
-      className={`hangoverDropdown-nav-item${isActive ? ' isActive' : ''}`}
+      className={`hangoverDropdown-nav-item${isActive ? ' isActive' : ''}${isDisabled ? ' isDisabled' : ''}`}
       onClick={() => { handleClick(); userOnClick?.(); }}
+      disabled={isDisabled}
+      aria-disabled={isDisabled || undefined}
       title={typeof children === 'string' ? t(children) : undefined}
       data-ho-active={isActive}
       {...navItemRest}

@@ -2,6 +2,38 @@ import { useEffect, useRef, Children } from 'react';
 import { useDropdownContext } from '../../context/DropdownContext';
 import { isVisible, closestByVerticalPosition, scrollWithin } from '../../utils/keyboardNav';
 
+// Score how well an item's label matches the query. Higher is better.
+// Exact matches rank above prefix matches, which rank above substring
+// matches, which rank above fuzzy-only matches — so the most relevant result
+// is highlighted even if it appears lower in the (position-preserving) list.
+function matchScore(label, query) {
+  if (label === query) return 1000;
+  if (label.startsWith(query)) return 500 - label.length;
+  const idx = label.indexOf(query);
+  if (idx !== -1) return 200 - idx - label.length * 0.1;
+  return -label.length;
+}
+
+// Pick the best-matching element among the visible items for the given query.
+function pickBestMatch(items, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return items[0] ?? null;
+  let best = null;
+  let bestScore = -Infinity;
+  for (const el of items) {
+    const label = (el.querySelector('.hangoverDropdown-item-label')?.textContent ?? '')
+      .trim()
+      .toLowerCase();
+    if (!label) continue;
+    const score = matchScore(label, q);
+    if (score > bestScore) {
+      bestScore = score;
+      best = el;
+    }
+  }
+  return best ?? items[0] ?? null;
+}
+
 // Default search icon (inline SVG)
 function DefaultSearchIcon() {
   return (
@@ -28,6 +60,9 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
   const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, t, isOpen, autoFocusSearch } = useDropdownContext();
   const searchInputRef = useRef(null);
   const bottomPadRef = useRef(0);
+  // The item currently highlighted while the search input keeps DOM focus
+  // (virtual / aria-activedescendant navigation). null when no item is active.
+  const activeItemRef = useRef(null);
 
   // Auto-focus the search input when the panel opens (opt-out via
   // autoFocusSearch={false} on <Dropdown>).
@@ -80,6 +115,29 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     if (displayMode !== 'tab') return;
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [displayMode, activeNavId, contentRef]);
+
+  // When the search query changes, virtually highlight the first (best) match
+  // so the user can press Enter to select it while the search input keeps
+  // focus. The list is scrolled so the first selection sits at the top of the
+  // viewport (instead of always resetting to the very top). With no query the
+  // list simply returns to the top.
+  useEffect(() => {
+    const list = contentRef.current;
+    if (!list) return;
+    clearActiveItem();
+    if (!searchQuery) {
+      list.scrollTop = 0;
+      return;
+    }
+    const items = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible);
+    const best = pickBestMatch(items, searchQuery);
+    if (best) {
+      setActiveItem(best);
+      scrollItemToTop(best);
+    } else {
+      list.scrollTop = 0;
+    }
+  }, [searchQuery, contentRef]);
 
   // Scroll mode: reserve enough space at the bottom of the list so the last
   // section (even a short single-entry one) can be scrolled all the way to the
@@ -146,7 +204,52 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
   }, [displayMode, contentRef, children, searchQuery]);
 
   function handleSearch(e) {
+    // Typing changes the visible list, so any virtual highlight is stale.
+    clearActiveItem();
     fireEvent('search', { query: e.target.value });
+  }
+
+  // ── Virtual highlight (search input keeps focus) ───────────────────────
+  // While the search input is focused, arrow navigation highlights items
+  // without moving DOM focus, so the user can keep editing the query and
+  // press Enter to activate the highlighted item.
+  const HIGHLIGHT_CLASS = 'isActive';
+
+  function clearActiveItem() {
+    const el = activeItemRef.current;
+    if (el) el.classList.remove(HIGHLIGHT_CLASS);
+    activeItemRef.current = null;
+    searchInputRef.current?.removeAttribute('aria-activedescendant');
+  }
+
+  function setActiveItem(el) {
+    if (activeItemRef.current && activeItemRef.current !== el) {
+      activeItemRef.current.classList.remove(HIGHLIGHT_CLASS);
+    }
+    activeItemRef.current = el;
+    el.classList.add(HIGHLIGHT_CLASS);
+    if (!el.id) el.id = `hangoverDropdown-item-${Math.random().toString(36).slice(2, 9)}`;
+    searchInputRef.current?.setAttribute('aria-activedescendant', el.id);
+    scrollItemIntoView(el);
+  }
+
+  // Move the virtual highlight through the visible items. The search input
+  // stays focused the whole time, so navigation wraps among the items only
+  // (it never returns focus/highlight to the input).
+  function moveVirtualHighlight(direction) {
+    const list = contentRef.current;
+    const items = list
+      ? Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible)
+      : [];
+    if (items.length === 0) return;
+    const currentIdx = activeItemRef.current ? items.indexOf(activeItemRef.current) : -1;
+    let nextIdx;
+    if (currentIdx === -1) {
+      nextIdx = direction === 1 ? 0 : items.length - 1;
+    } else {
+      nextIdx = (currentIdx + direction + items.length) % items.length;
+    }
+    setActiveItem(items[nextIdx]);
   }
 
   // Keyboard navigation: ArrowDown/ArrowUp move focus across the currently
@@ -165,6 +268,19 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
       : 0;
 
     scrollWithin(list, el, stickyHeight + gap, gap);
+  }
+
+  // Scroll so `el` sits at the very top of the list (just below the sticky
+  // section header). Used to bring the first search match to the top.
+  function scrollItemToTop(el) {
+    const list = contentRef.current;
+    if (!list || !el) return;
+    const stickyEl = list.querySelector('.hangoverDropdown-section-title');
+    const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
+    const containerTop = list.getBoundingClientRect().top;
+    const elTop = el.getBoundingClientRect().top;
+    const offset = elTop - containerTop + list.scrollTop - stickyHeight;
+    list.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
   }
 
   function focusTarget(el) {
@@ -240,17 +356,25 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
   }
 
   // The search input keeps Left/Right for caret movement; only Up/Down
-  // navigate. All keys are contained (except Escape/Tab) so typing and
+  // navigate. Navigation highlights items virtually so the input never loses
+  // focus — the user can keep editing and press Enter to activate the
+  // highlighted item. All keys are contained (except Escape/Tab) so typing and
   // navigation never trigger the host application's own shortcuts.
   function handleSearchKeyNav(e) {
     if (e.key === 'Escape' || e.key === 'Tab') return;
     e.stopPropagation();
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      moveItemFocus(1);
+      moveVirtualHighlight(1);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      moveItemFocus(-1);
+      moveVirtualHighlight(-1);
+    } else if (e.key === 'Enter') {
+      const el = activeItemRef.current;
+      if (el) {
+        e.preventDefault();
+        el.click();
+      }
     }
   }
 
@@ -271,6 +395,7 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
             value={searchQuery}
             onChange={handleSearch}
             onKeyDown={handleSearchKeyNav}
+            onBlur={clearActiveItem}
             ref={searchInputRef}
           />
         </label>

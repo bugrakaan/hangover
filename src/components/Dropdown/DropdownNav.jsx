@@ -154,7 +154,7 @@ function DropdownNav({
     if (e.key !== 'Escape' && e.key !== 'Tab') e.stopPropagation();
 
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item:not(:disabled)')).filter(isVisible);
       if (items.length === 0) return;
       e.preventDefault();
       const dir = e.key === 'ArrowDown' ? 1 : -1;
@@ -168,7 +168,7 @@ function DropdownNav({
     } else if (e.key === 'ArrowRight') {
       const list = contentRef?.current;
       if (!list) return;
-      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item:not(:disabled)')).filter(isVisible);
       const firstItem = items[0];
       const panel = navRoot.closest('.hangoverDropdown-panel');
       const searchInput = panel?.querySelector('.hangoverDropdown-search-input');
