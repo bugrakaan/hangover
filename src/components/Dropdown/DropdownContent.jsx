@@ -56,7 +56,7 @@ function DefaultSearchIcon() {
  *  children           DropdownSection / DropdownGroup / DropdownItem elements
  */
 function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to show here', component: Comp, children, ...rest }) {
-  const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, t, isOpen, autoFocusSearch } = useDropdownContext();
+  const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, navLabels, t, isOpen, autoFocusSearch } = useDropdownContext();
   const searchInputRef = useRef(null);
   const bottomPadRef = useRef(0);
   // The item currently highlighted while the search input keeps DOM focus
@@ -71,18 +71,29 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     if (el) el.focus({ preventScroll: true });
   }, [isOpen, autoFocusSearch]);
 
-  // Scroll spy: update active nav based on scroll position
+  // The nav id that represents the top of the list: the "All" item when it is
+  // present, otherwise the first section.
+  function topNavId() {
+    if (navLabels.has('__all__')) return '__all__';
+    const first = contentRef.current?.querySelector('[data-section-for]');
+    return first?.dataset.sectionFor ?? '__all__';
+  }
+
+  // Scroll spy: update active nav based on scroll position. Disabled while a
+  // search is active — during search the active nav is driven by the currently
+  // highlighted result's category instead of the scroll position.
   useEffect(() => {
     if (displayMode !== 'scroll') return;
+    if (searchQuery) return;
     const scrollEl = contentRef.current;
     if (!scrollEl) return;
 
     function updateSpy() {
       const { scrollTop, scrollHeight, clientHeight } = scrollEl;
 
-      // En üstteyken → All
+      // En üstteyken → All (veya All yoksa ilk section)
       if (scrollTop <= 2) {
-        setScrollSpyActive('__all__');
+        setScrollSpyActive(topNavId());
         return;
       }
 
@@ -107,7 +118,7 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
 
     scrollEl.addEventListener('scroll', updateSpy, { passive: true });
     return () => scrollEl.removeEventListener('scroll', updateSpy);
-  }, [displayMode, contentRef, setScrollSpyActive]);
+  }, [displayMode, contentRef, setScrollSpyActive, searchQuery]);
 
   // Tab mode: reset scroll position when active tab changes
   useEffect(() => {
@@ -126,6 +137,9 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     clearActiveItem();
     if (!searchQuery) {
       list.scrollTop = 0;
+      // Search cleared → reset the active category to the top ("All" if present,
+      // otherwise the first section).
+      setScrollSpyActive(topNavId());
       return;
     }
     const items = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible);
@@ -229,6 +243,12 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     el.classList.add(HIGHLIGHT_CLASS);
     if (!el.id) el.id = `hangoverDropdown-item-${Math.random().toString(36).slice(2, 9)}`;
     searchInputRef.current?.setAttribute('aria-activedescendant', el.id);
+    // Reflect the highlighted item's category as active in the left nav
+    // (scroll mode only) so the nav follows the selection, not the scroll.
+    if (displayMode === 'scroll') {
+      const sectionId = el.closest('[data-section-for]')?.dataset.sectionFor;
+      if (sectionId) setScrollSpyActive(sectionId);
+    }
     scrollItemIntoView(el);
   }
 
