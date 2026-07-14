@@ -163,7 +163,7 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
       setScrollSpyActive(topNavId());
       return;
     }
-    const items = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible);
+    const items = Array.from(list.querySelectorAll('.hangoverDropdown-item'));
     const best = pickBestMatch(items, searchQuery);
     if (best) {
       setHasNoMatchAnywhere(false);
