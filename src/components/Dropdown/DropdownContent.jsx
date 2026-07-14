@@ -1,4 +1,4 @@
-import { useEffect, useRef, Children } from 'react';
+import { useEffect, useRef, useState, Children } from 'react';
 import { useDropdownContext } from '../../context/DropdownContext';
 import { isVisible, closestByVerticalPosition, scrollWithin } from '../../utils/keyboardNav';
 
@@ -55,7 +55,7 @@ function DefaultSearchIcon() {
  *  component          custom wrapper component
  *  children           DropdownSection / DropdownGroup / DropdownItem elements
  */
-function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to show here', component: Comp, children, ...rest }) {
+function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to show here', noMatchText = 'No results found', component: Comp, children, ...rest }) {
   const { searchQuery, fireEvent, contentRef, displayMode, activeNavId, setScrollSpyActive, navLabels, t, isOpen, autoFocusSearch } = useDropdownContext();
   const searchInputRef = useRef(null);
   const bottomPadRef = useRef(0);
@@ -65,6 +65,10 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
   // Timestamp until which scroll-spy is suppressed, so a programmatic scroll
   // from keyboard navigation doesn't override the category we set explicitly.
   const spyLockRef = useRef(0);
+  // Whether the current search has no matching items anywhere. Derived from the
+  // DOM inside the search effect (not from async sectionMatches) to avoid the
+  // one-render lag that caused a flash between the two states.
+  const [hasNoMatchAnywhere, setHasNoMatchAnywhere] = useState(false);
 
   // Auto-focus the search input when the panel opens (opt-out via
   // autoFocusSearch={false} on <Dropdown>).
@@ -153,6 +157,7 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     clearActiveItem();
     if (!searchQuery) {
       list.scrollTop = 0;
+      setHasNoMatchAnywhere(false);
       // Search cleared → reset the active category to the top ("All" if present,
       // otherwise the first section).
       setScrollSpyActive(topNavId());
@@ -161,10 +166,18 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     const items = Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible);
     const best = pickBestMatch(items, searchQuery);
     if (best) {
+      setHasNoMatchAnywhere(false);
       setActiveItem(best);
       scrollItemToTop(best);
     } else {
+      // No results anywhere: show global no-match, reset nav to All (or clear).
+      setHasNoMatchAnywhere(true);
       list.scrollTop = 0;
+      if (navLabels.has('__all__')) {
+        setScrollSpyActive('__all__');
+      } else {
+        setScrollSpyActive(null);
+      }
     }
   }, [searchQuery, contentRef]);
 
@@ -454,7 +467,19 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
       <div role="listbox" className={`hangoverDropdown-list${displayMode === 'tab' ? ' isTabMode' : ''}${displayMode === 'tab' && activeNavId === '__all__' ? ' isAllActive' : ''}`} ref={contentRef} onKeyDown={handleKeyNav}>
         {isEmpty ? (
           <div className="hangoverDropdown-content-empty">{t(emptyText)}</div>
-        ) : children}
+        ) : (
+          <>
+            {hasNoMatchAnywhere && (
+              <div className="hangoverDropdown-content-empty hangoverDropdown-content-no-match">{t(noMatchText)}</div>
+            )}
+            {/* Keep children mounted so DropdownSection stays registered in
+                sectionMatches (needed for nav disabled state). Hidden via CSS
+                when the global no-match overlay is shown. */}
+            <div aria-hidden={hasNoMatchAnywhere || undefined} style={hasNoMatchAnywhere ? { display: 'none' } : undefined}>
+              {children}
+            </div>
+          </>
+        )}
       </div>
     </>
   );

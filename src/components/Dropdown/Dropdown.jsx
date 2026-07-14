@@ -307,8 +307,8 @@ const Dropdown = forwardRef(function Dropdown(
   }), [fireEvent]); // fireEvent is stable, handle is created once
 
   const setScrollSpyActive = useCallback((id) => {
-    setActiveNavId(id);
-    const label = navLabels.current.get(id) ?? '';
+    setActiveNavId(id ?? null);
+    const label = id ? (navLabels.current.get(id) ?? '') : '';
     setActiveNavLabel(label);
   }, []);
 

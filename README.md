@@ -188,6 +188,7 @@ Right content column. Contains the search bar and the scrollable item list.
 |---|---|---|---|
 | `searchPlaceholder` | `string` | `"Search"` | Placeholder text for the search input. |
 | `emptyText` | `string` | `"Nothing to show here"` | Text shown when `Content` has no children at all (empty state). The search bar is also hidden in this state. |
+| `noMatchText` | `string` | `"No results found"` | Text shown when a search query returns no matching items in **any** section or group. Displayed as a single message covering the whole list area. Distinct from the per-group `noResultsText` (which is only shown when `hideEmptyResults={false}`). |
 | `component` | `React component` | — | Custom wrapper component. |
 | `...rest` | `any` | — | Any additional props are forwarded to the content column `<div>` (or `component`). |
 
@@ -507,9 +508,9 @@ trigger.addEventListener('HO:select', (e) => {
 
 Pass a `useTranslationFunction` to `<Dropdown>` to localize the UI. When
 provided, **every** user-facing string is routed through it — including
-built-in defaults like `"Search"`, `"Select all"`, `"No results"` and
-`"Nothing to show here"`, as well as your own labels (group names, item
-labels, nav items, section/panel titles).
+built-in defaults like `"Search"`, `"Select all"`, `"No results"`,
+`"No results found"` and `"Nothing to show here"`, as well as your own
+labels (group names, item labels, nav items, section/panel titles).
 
 The function receives the original string and returns the translated one:
 
@@ -518,6 +519,7 @@ const translations = {
   'Search': 'Ara',
   'Select all': 'Tümünü seç',
   'No results': 'Sonuç yok',
+  'No results found': 'Hiç sonuç bulunamadı',
   'Nothing to show here': 'Gösterilecek bir şey yok',
   'Fruits': 'Meyveler',
   'Apple': 'Elma',

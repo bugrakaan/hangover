@@ -475,6 +475,14 @@
     margin-bottom: 4px;
   }
 
+  // Global "no results" shown when the search yields nothing at all
+  &-content-no-match {
+    padding: 24px 12px;
+    text-align: center;
+    font-size: var(--hangover-font-size-base);
+    color: var(--hangover-color-text-muted);
+  }
+
   // ── List ───────────────────────────────────
   &-list {
     flex: 1;
