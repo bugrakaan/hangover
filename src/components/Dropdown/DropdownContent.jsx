@@ -316,13 +316,15 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
   }
 
   // Total height of sticky headers pinned at the top of the list that can
-  // overlap an item: the section title (when present) plus the item's own
-  // group header when it is sticky (e.g. the "light" group-header style).
+  // overlap an item: the section title of the item's own section (not the
+  // first title in the list, which may belong to a different section) plus
+  // the item's group header when it is sticky (e.g. the "light" style).
   function stickyOffsetFor(el) {
-    const list = contentRef.current;
-    if (!list) return 0;
     let offset = 0;
-    const sectionTitle = list.querySelector('.hangoverDropdown-section-title');
+    // Use the section title of the item's own section so the offset is correct
+    // regardless of which section is currently scrolled to the top.
+    const section = el?.closest('[data-section-for]');
+    const sectionTitle = section?.querySelector('.hangoverDropdown-section-title');
     if (sectionTitle) offset += sectionTitle.offsetHeight;
     const header = el?.closest('.hangoverDropdown-group')?.querySelector('.hangoverDropdown-group-header');
     if (header && getComputedStyle(header).position === 'sticky') {
@@ -332,15 +334,28 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
   }
 
   // Scroll so `el` sits at the very top of the list (just below any sticky
-  // headers). Used to bring the first search match to the top.
+  // headers). Uses instant positioning (no animation) so rapid query changes
+  // always land at the exact same pixel. A double-rAF correction is scheduled
+  // so the scroll is re-applied after computeBottomSpace (which runs via
+  // ResizeObserver → rAF) has updated paddingBottom — otherwise the browser
+  // can clamp scrollTop to the stale scrollHeight before padding is added.
   function scrollItemToTop(el) {
     const list = contentRef.current;
     if (!list || !el) return;
     const stickyHeight = stickyOffsetFor(el);
-    const containerTop = list.getBoundingClientRect().top;
-    const elTop = el.getBoundingClientRect().top;
-    const offset = elTop - containerTop + list.scrollTop - stickyHeight;
-    list.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+
+    const doScroll = () => {
+      const currentList = contentRef.current;
+      if (!currentList || !el.isConnected) return;
+      const containerTop = currentList.getBoundingClientRect().top;
+      const elTop = el.getBoundingClientRect().top;
+      const offset = elTop - containerTop + currentList.scrollTop - stickyHeight;
+      currentList.scrollTop = Math.max(0, offset);
+    };
+
+    doScroll(); // immediate best-effort
+    // Re-apply after paddingBottom update (ResizeObserver → rAF → computeBottomSpace)
+    requestAnimationFrame(() => requestAnimationFrame(doScroll));
   }
 
   function focusTarget(el) {
