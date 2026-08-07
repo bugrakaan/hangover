@@ -60,7 +60,7 @@ export const Controlled = {
               {selected ? selected.label : 'Select a country'}
             </button>
           </Dropdown.Trigger>
-          <Dropdown.Panel>
+          <Dropdown.Panel placement="bottom-end">
             <Dropdown.Content>
               <Dropdown.Section>
                 <Dropdown.Group label="Europe">
@@ -140,7 +140,7 @@ export const WithoutTrigger = {
         </button>
 
         <Dropdown ref={dropdownRef} hideOnSelection onEvent={handleEvent}>
-          <Dropdown.Panel anchor={buttonRef} placement="bottom-start">
+          <Dropdown.Panel anchor={buttonRef} placement="bottom-end">
             <Dropdown.Content>
               <Dropdown.Section>
                 <Dropdown.Group label="Europe">

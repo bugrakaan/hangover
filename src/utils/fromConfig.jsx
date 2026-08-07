@@ -51,6 +51,7 @@ export { buildFromConfig } from './buildFromConfig';
  *   allIcon?:      ReactNode | FC
  *   collapsed?:    boolean
  *   autoCollapse?: boolean | 'auto'
+ *   autoCollapseDelay?: number
  *
  *   // Content column
  *   content: {

@@ -28,14 +28,20 @@ export const TabMode = {
     defaultOpen: false,
     defaultGroupExpanded: true,
     hideOnSelection: true,
+    autoCollapse: false,
+    autoCollapseDelay: 0,
   },
-  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection }) => (
+  argTypes: {
+    autoCollapse: { control: 'select', options: [false, true, 'auto'] },
+    autoCollapseDelay: { control: { type: 'number', min: 0, step: 50 } },
+  },
+  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay }) => (
     <Dropdown displayMode="tab" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={hideOnSelection}>
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Open Tab Dropdown</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
-        <Dropdown.Navigation showAll>
+      <Dropdown.Panel placement="bottom-end">
+        <Dropdown.Navigation showAll autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="frontend">Frontend</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="backend">Backend</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="design">Design</Dropdown.NavigationItem>

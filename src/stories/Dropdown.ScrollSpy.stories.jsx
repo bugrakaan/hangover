@@ -4,13 +4,17 @@ import { Dropdown } from '../components/Dropdown';
 const AUTO_COLLAPSE_ARG_TYPE = {
   control: 'select',
   options: [false, true, 'auto'],
-  description: 'Automatically collapse nav; "auto" expands on hover or keyboard focus',
+  description: 'true always collapses; "auto" collapses when width is limited; both expand on interaction',
 };
 
 export default {
   title: 'Dropdown/2. Scroll Spy',
   parameters: {
     layout: 'centered',
+  },
+  args: {
+    autoCollapse: false,
+    autoCollapseDelay: 0,
   },
   argTypes: {
     displayMode: { table: { disable: true } },
@@ -32,6 +36,10 @@ export default {
       description: 'Initial collapsed state of the navigation',
     },
     autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
+    autoCollapseDelay: {
+      control: { type: 'number', min: 0, step: 50 },
+      description: 'Delay in ms before an auto-collapsed nav expands',
+    },
   },
 };
 
@@ -84,15 +92,14 @@ export const ScrollSpy = {
   },
   argTypes: {
     collapsed: { table: { disable: true } },
-    autoCollapse: { table: { disable: true } },
   },
-  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection }) => (
+  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay }) => (
     <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={hideOnSelection}>
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Browse Categories</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
-        <Dropdown.Navigation showAll allIcon={IconAll}>
+      <Dropdown.Panel placement="bottom-end">
+        <Dropdown.Navigation showAll allIcon={IconAll} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>
@@ -210,6 +217,7 @@ const ProductionMode = {
     placement: 'bottom-end',
     collapsed: false,
     autoCollapse: true,
+    autoCollapseDelay: 150,
     darkMode: false,
   },
   argTypes: {
@@ -220,6 +228,7 @@ const ProductionMode = {
     },
     collapsed: { control: 'boolean', description: 'Initial collapsed state' },
     autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
+    autoCollapseDelay: { control: { type: 'number', min: 0, step: 50 } },
     darkMode: { control: 'boolean', description: 'Dark mode' },
   },
   decorators: [
@@ -232,13 +241,13 @@ const ProductionMode = {
       </>
     ),
   ],
-  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, placement, collapsed, autoCollapse, darkMode }) => (
+  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, placement, collapsed, autoCollapse, autoCollapseDelay, darkMode }) => (
     <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={hideOnSelection} darkMode={darkMode}>
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Select Field</button>
       </Dropdown.Trigger>
       <Dropdown.Panel placement={placement}>
-        <Dropdown.Navigation showAll allIcon={IconAll} collapsed={collapsed} autoCollapse={autoCollapse}>
+        <Dropdown.Navigation showAll allIcon={IconAll} collapsed={collapsed} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="forms" icon={IconForms}>Forms</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="ai-outputs" icon={IconAI}>AI Elements</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="payment-outputs" icon={IconPayment}>Payment</Dropdown.NavigationItem>
@@ -438,6 +447,7 @@ const ProductionModeIcons = {
     placement: 'bottom-end',
     collapsed: false,
     autoCollapse: true,
+    autoCollapseDelay: 0,
     darkMode: false,
   },
   argTypes: {
@@ -448,6 +458,7 @@ const ProductionModeIcons = {
     },
     collapsed: { control: 'boolean', description: 'Initial collapsed state' },
     autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
+    autoCollapseDelay: { control: { type: 'number', min: 0, step: 50 } },
     darkMode: { control: 'boolean', description: 'Dark mode' },
   },
   decorators: [
@@ -460,13 +471,13 @@ const ProductionModeIcons = {
       </>
     ),
   ],
-  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, placement, collapsed, autoCollapse, darkMode }) => (
+  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, placement, collapsed, autoCollapse, autoCollapseDelay, darkMode }) => (
     <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={hideOnSelection} darkMode={darkMode}>
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Select Field</button>
       </Dropdown.Trigger>
       <Dropdown.Panel placement={placement}>
-        <Dropdown.Navigation showAll allIcon={IconAll} collapsed={collapsed} autoCollapse={autoCollapse}>
+        <Dropdown.Navigation showAll allIcon={IconAll} collapsed={collapsed} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="forms" icon={IconForms}>Forms</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="ai-outputs" icon={IconAI}>AI Elements</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="payment-outputs" icon={IconPayment}>Payment</Dropdown.NavigationItem>
@@ -565,6 +576,7 @@ export const LongTextContent = {
     defaultGroupExpanded: true,
     hideOnSelection: false,
     autoCollapse: true,
+    autoCollapseDelay: 0,
     placement: 'bottom-end',
   },
   argTypes: {
@@ -584,13 +596,13 @@ export const LongTextContent = {
       </>
     ),
   ],
-  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, placement }) => (
+  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay, placement }) => (
     <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={hideOnSelection}>
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Select Field</button>
       </Dropdown.Trigger>
       <Dropdown.Panel placement={placement}>
-        <Dropdown.Navigation showAll allIcon={IconAll} autoCollapse={autoCollapse}>
+        <Dropdown.Navigation showAll allIcon={IconAll} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="forms" icon={IconForms}>Forms</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="ai-outputs" icon={IconAI}>AI Elements</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="payment-outputs" icon={IconPayment}>Payment</Dropdown.NavigationItem>
@@ -661,11 +673,13 @@ export const CollapsibleNavigation = {
     collapsed: false,
     autoCollapse: true,
     theme: 'light',
+    autoCollapseDelay: 300,
   },
   argTypes: {
     hideOnSelection: { table: { disable: true } },
     collapsed: { control: 'boolean', description: 'Initial collapsed state' },
     autoCollapse: AUTO_COLLAPSE_ARG_TYPE,
+    autoCollapseDelay: { control: { type: 'number', min: 0, step: 50 } },
     theme: {
       control: 'select',
       options: ['light', 'dark'],
@@ -679,7 +693,7 @@ export const CollapsibleNavigation = {
       </div>
     ),
   ],
-  render: ({ defaultOpen, defaultGroupExpanded, collapsed, autoCollapse, theme }) => {
+  render: ({ defaultOpen, defaultGroupExpanded, collapsed, autoCollapse, autoCollapseDelay, theme }) => {
     const darkMode = theme === 'dark';
 
     return (
@@ -687,8 +701,8 @@ export const CollapsibleNavigation = {
         <Dropdown.Trigger>
           <button type="button" className="ho-demo-trigger">Browse Categories</button>
         </Dropdown.Trigger>
-        <Dropdown.Panel>
-          <Dropdown.Navigation showAll allIcon={IconAll} collapsed={collapsed} autoCollapse={autoCollapse}>
+        <Dropdown.Panel placement="bottom-end">
+          <Dropdown.Navigation showAll allIcon={IconAll} collapsed={collapsed} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
             <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
             <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
             <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>
@@ -755,10 +769,11 @@ export const SingleEntryLastCategory = {
     defaultGroupExpanded: true,
     hideOnSelection: true,
     darkMode: false,
+    autoCollapse: true,
+    autoCollapseDelay: 333
   },
   argTypes: {
     collapsed: { table: { disable: true } },
-    autoCollapse: { table: { disable: true } },
     darkMode: { control: 'boolean', description: 'Dark mode' },
   },
   decorators: [
@@ -768,13 +783,13 @@ export const SingleEntryLastCategory = {
       </div>
     ),
   ],
-  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, darkMode }) => (
+  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay, darkMode }) => (
     <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={hideOnSelection} darkMode={darkMode}>
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Browse Categories</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
-        <Dropdown.Navigation showAll allIcon={IconAll}>
+      <Dropdown.Panel placement="bottom-end">
+        <Dropdown.Navigation showAll allIcon={IconAll} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>
@@ -840,7 +855,7 @@ export const SingleEntryLastCategory = {
   ),
 };
 
-function DraggableAnchorDemo({ darkMode }) {
+function DraggableAnchorDemo({ darkMode, autoCollapse, autoCollapseDelay }) {
   const anchorRef = useRef(null);
   const dragRef = useRef(null);
   const [pos, setPos] = useState({ x: 40, y: 40 });
@@ -913,8 +928,8 @@ function DraggableAnchorDemo({ darkMode }) {
       </button>
 
       <Dropdown displayMode="scroll" defaultOpen defaultGroupExpanded hideOnSelection={false} darkMode={darkMode}>
-        <Dropdown.Panel anchor={anchorRef} placement="bottom-start">
-          <Dropdown.Navigation showAll allIcon={IconAll}>
+        <Dropdown.Panel anchor={anchorRef} placement="bottom-end">
+          <Dropdown.Navigation showAll allIcon={IconAll} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
             <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
             <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
             <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>
@@ -960,13 +975,14 @@ export const DraggableAnchor = {
     defaultGroupExpanded: { table: { disable: true } },
     hideOnSelection: { table: { disable: true } },
     collapsed: { table: { disable: true } },
-    autoCollapse: { table: { disable: true } },
     darkMode: { control: 'boolean', description: 'Dark mode' },
   },
   parameters: {
     layout: 'centered',
   },
-  render: ({ darkMode }) => <DraggableAnchorDemo darkMode={darkMode} />,
+  render: ({ darkMode, autoCollapse, autoCollapseDelay }) => (
+    <DraggableAnchorDemo darkMode={darkMode} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay} />
+  ),
 };
 
 export const GroupHeaderStyle = {
@@ -986,7 +1002,6 @@ export const GroupHeaderStyle = {
     defaultGroupExpanded: { table: { disable: true } },
     hideOnSelection: { table: { disable: true } },
     collapsed: { table: { disable: true } },
-    autoCollapse: { table: { disable: true } },
   },
   parameters: {
     layout: 'centered',
@@ -998,13 +1013,13 @@ export const GroupHeaderStyle = {
       </div>
     ),
   ],
-  render: ({ groupHeaderStyle, darkMode }) => (
+  render: ({ groupHeaderStyle, autoCollapse, autoCollapseDelay, darkMode }) => (
     <Dropdown displayMode="scroll" defaultOpen defaultGroupExpanded groupHeaderStyle={groupHeaderStyle} darkMode={darkMode}>
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Select Field</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
-        <Dropdown.Navigation showAll allIcon={IconAll}>
+      <Dropdown.Panel placement="bottom-end">
+        <Dropdown.Navigation showAll allIcon={IconAll} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="fruits" icon={IconFruits}>Fruits</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="vegetables" icon={IconVegetables}>Vegetables</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="dairy" icon={IconDairy}>Dairy</Dropdown.NavigationItem>

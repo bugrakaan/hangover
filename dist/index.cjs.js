@@ -585,10 +585,17 @@ function DropdownNavItem({
     contentRef,
     sectionRefs,
     registerNavLabel,
+    searchQuery,
+    sectionMatches,
+    hideEmptyResults,
     t
   } = useDropdownContext();
   const isActive = activeNavId === id;
   const buttonRef = react.useRef(null);
+
+  // While filtering, categories with no matching items are disabled. The "All"
+  // item is never disabled. Skipped entirely when hideEmptyResults is off.
+  const isDisabled = hideEmptyResults && Boolean(searchQuery?.trim()) && id !== '__all__' && sectionMatches.get(id) === false;
   react.useEffect(() => {
     registerNavLabel(id, typeof children === 'string' ? children : '');
   }, [id, children, registerNavLabel]);
@@ -622,6 +629,7 @@ function DropdownNavItem({
     }
   }, [isActive]);
   function handleClick() {
+    if (isDisabled) return;
     fireEvent('navChange', {
       id
     });
@@ -655,7 +663,8 @@ function DropdownNavItem({
       userOnClick?.();
     },
     id,
-    children
+    children,
+    disabled: isDisabled
   };
   if (Comp) {
     return /*#__PURE__*/jsxRuntime.jsx(Comp, {
@@ -667,11 +676,13 @@ function DropdownNavItem({
   return /*#__PURE__*/jsxRuntime.jsxs("button", {
     type: "button",
     ref: buttonRef,
-    className: `hangoverDropdown-nav-item${isActive ? ' isActive' : ''}`,
+    className: `hangoverDropdown-nav-item${isActive ? ' isActive' : ''}${isDisabled ? ' isDisabled' : ''}`,
     onClick: () => {
       handleClick();
       userOnClick?.();
     },
+    disabled: isDisabled,
+    "aria-disabled": isDisabled || undefined,
     title: typeof children === 'string' ? t(children) : undefined,
     "data-ho-active": isActive,
     ...navItemRest,
@@ -750,6 +761,7 @@ function DropdownNav({
   component: Comp,
   collapsed = false,
   autoCollapse = false,
+  autoCollapseDelay = 0,
   ...rest
 }) {
   const {
@@ -757,63 +769,58 @@ function DropdownNav({
     contentRef
   } = useDropdownContext();
   const wrapperRef = react.useRef(null);
-  const naturalWidthRef = react.useRef(null);
-  const [isCollapsed, setIsCollapsed] = react.useState(collapsed);
+  const expandTimerRef = react.useRef(null);
+  const [isAutoWidthCollapsed, setIsAutoWidthCollapsed] = react.useState(false);
   const [isInteractivelyExpanded, setIsInteractivelyExpanded] = react.useState(false);
   const childCount = react.Children.count(children);
   const isSingle = childCount <= 1;
-  const shouldAutoCollapse = autoCollapse === true || autoCollapse === 'auto';
-  const canInteractivelyExpand = autoCollapse === 'auto' && collapsed;
+  const canInteractivelyExpand = autoCollapse === true || autoCollapse === 'auto';
+  const shouldCollapse = collapsed || autoCollapse === true || autoCollapse === 'auto' && isAutoWidthCollapsed;
+  const isCollapsed = shouldCollapse && !isInteractivelyExpanded;
   react.useEffect(() => {
     setHasNav(!isSingle);
     return () => setHasNav(false);
   }, [setHasNav, isSingle]);
-
-  // collapsed prop always sets the base state
   react.useEffect(() => {
-    if (canInteractivelyExpand && isInteractivelyExpanded) {
-      setIsCollapsed(false);
-      return;
+    if (autoCollapse !== 'auto') {
+      setIsAutoWidthCollapsed(false);
+      return undefined;
     }
-    setIsCollapsed(collapsed);
-  }, [canInteractivelyExpand, collapsed, isInteractivelyExpanded]);
-  react.useEffect(() => {
-    if (!shouldAutoCollapse) return;
-    function getNaturalWidth() {
+    const checkWidth = () => {
       const styles = getComputedStyle(document.documentElement);
       const navWidth = parseFloat(styles.getPropertyValue('--hangover-nav-width')) || 0;
       const contentMaxWidth = parseFloat(styles.getPropertyValue('--hangover-content-max-width')) || 0;
-      return navWidth + contentMaxWidth;
-    }
-    function check() {
-      if (naturalWidthRef.current === null) {
-        naturalWidthRef.current = getNaturalWidth();
-      }
-      const panelTooWide = window.innerWidth < naturalWidthRef.current + 32;
-      setIsCollapsed(canInteractivelyExpand && isInteractivelyExpanded ? false : panelTooWide || collapsed);
-    }
-    window.addEventListener('resize', check);
-    window.addEventListener('scroll', check, {
-      passive: true
-    });
-    check();
-    return () => {
-      window.removeEventListener('resize', check);
-      window.removeEventListener('scroll', check);
-      naturalWidthRef.current = null;
-      setIsCollapsed(collapsed);
+      setIsAutoWidthCollapsed(window.innerWidth < navWidth + contentMaxWidth + 32);
     };
-  }, [canInteractivelyExpand, collapsed, isInteractivelyExpanded, shouldAutoCollapse]);
+    window.addEventListener('resize', checkWidth);
+    checkWidth();
+    return () => window.removeEventListener('resize', checkWidth);
+  }, [autoCollapse]);
+  const clearExpandTimer = () => {
+    if (expandTimerRef.current === null) return;
+    window.clearTimeout(expandTimerRef.current);
+    expandTimerRef.current = null;
+  };
   const expandInteractively = () => {
-    if (canInteractivelyExpand) {
+    if (!canInteractivelyExpand || isInteractivelyExpanded || expandTimerRef.current !== null) return;
+    const delay = Number.isFinite(autoCollapseDelay) ? Math.max(0, autoCollapseDelay) : 0;
+    if (delay === 0) {
       setIsInteractivelyExpanded(true);
+      return;
     }
+    expandTimerRef.current = window.setTimeout(() => {
+      expandTimerRef.current = null;
+      setIsInteractivelyExpanded(true);
+    }, delay);
   };
   const collapseInteractively = () => {
-    if (canInteractivelyExpand) {
-      setIsInteractivelyExpanded(false);
-    }
+    clearExpandTimer();
+    setIsInteractivelyExpanded(false);
   };
+  react.useEffect(() => {
+    if (!canInteractivelyExpand) collapseInteractively();
+  }, [canInteractivelyExpand]);
+  react.useEffect(() => () => clearExpandTimer(), []);
   const handleBlur = e => {
     if (!wrapperRef.current?.contains(e.relatedTarget)) {
       collapseInteractively();
@@ -857,7 +864,7 @@ function DropdownNav({
     // focus movement.
     if (e.key !== 'Escape' && e.key !== 'Tab') e.stopPropagation();
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item:not(:disabled)')).filter(isVisible);
       if (items.length === 0) return;
       e.preventDefault();
       const dir = e.key === 'ArrowDown' ? 1 : -1;
@@ -871,7 +878,7 @@ function DropdownNav({
     } else if (e.key === 'ArrowRight') {
       const list = contentRef?.current;
       if (!list) return;
-      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item')).filter(isVisible);
+      const items = Array.from(navRoot.querySelectorAll('.hangoverDropdown-nav-item:not(:disabled)')).filter(isVisible);
       const firstItem = items[0];
       const panel = navRoot.closest('.hangoverDropdown-panel');
       const searchInput = panel?.querySelector('.hangoverDropdown-search-input');
@@ -927,6 +934,32 @@ function DropdownNav({
   });
 }
 
+function matchScore(label, query) {
+  if (label === query) return 3;
+  if (label.startsWith(query)) return 2;
+  if (label.includes(query)) return 1;
+  return 0;
+}
+
+// Pick the best-matching element among the visible items for the given query.
+function pickBestMatch(items, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return items[0] ?? null;
+  let best = null;
+  let bestScore = -Infinity;
+  for (const el of items) {
+    const label = (el.querySelector('.hangoverDropdown-item-label')?.textContent ?? '').trim().toLowerCase();
+    if (!label) continue;
+    const score = matchScore(label, q);
+    if (score > bestScore) {
+      bestScore = score;
+      best = el;
+    }
+  }
+  return best ?? items[0] ?? null;
+}
+
+// Default search icon (inline SVG)
 function DefaultSearchIcon() {
   return /*#__PURE__*/jsxRuntime.jsx("svg", {
     width: "20",
@@ -959,6 +992,7 @@ function DefaultSearchIcon() {
 function DropdownContent({
   searchPlaceholder = 'Search',
   emptyText = 'Nothing to show here',
+  noMatchText = 'No results found',
   component: Comp,
   children,
   ...rest
@@ -970,12 +1004,23 @@ function DropdownContent({
     displayMode,
     activeNavId,
     setScrollSpyActive,
+    navLabels,
     t,
     isOpen,
     autoFocusSearch
   } = useDropdownContext();
   const searchInputRef = react.useRef(null);
   const bottomPadRef = react.useRef(0);
+  // The item currently highlighted while the search input keeps DOM focus
+  // (virtual / aria-activedescendant navigation). null when no item is active.
+  const activeItemRef = react.useRef(null);
+  // Timestamp until which scroll-spy is suppressed, so a programmatic scroll
+  // from keyboard navigation doesn't override the category we set explicitly.
+  const spyLockRef = react.useRef(0);
+  // Whether the current search has no matching items anywhere. Derived from the
+  // DOM inside the search effect (not from async sectionMatches) to avoid the
+  // one-render lag that caused a flash between the two states.
+  const [hasNoMatchAnywhere, setHasNoMatchAnywhere] = react.useState(false);
 
   // Auto-focus the search input when the panel opens (opt-out via
   // autoFocusSearch={false} on <Dropdown>).
@@ -987,21 +1032,45 @@ function DropdownContent({
     });
   }, [isOpen, autoFocusSearch]);
 
-  // Scroll spy: update active nav based on scroll position
+  // The nav id that represents the top of the list: the "All" item when it is
+  // present, otherwise the first section.
+  function topNavId() {
+    if (navLabels.has('__all__')) return '__all__';
+    const first = contentRef.current?.querySelector('[data-section-for]');
+    return first?.dataset.sectionFor ?? '__all__';
+  }
+
+  // Suppress scroll-spy briefly (during a programmatic keyboard scroll).
+  function lockSpy() {
+    spyLockRef.current = Date.now() + 500;
+  }
+
+  // Set the active nav category from an item's enclosing section (scroll mode).
+  function setNavFromItem(el) {
+    if (displayMode !== 'scroll') return;
+    const sectionId = el?.closest('[data-section-for]')?.dataset.sectionFor;
+    if (sectionId) setScrollSpyActive(sectionId);
+  }
+
+  // Scroll spy: update active nav based on scroll position. Disabled while a
+  // search is active — during search the active nav is driven by the currently
+  // highlighted result's category instead of the scroll position.
   react.useEffect(() => {
     if (displayMode !== 'scroll') return;
+    if (searchQuery) return;
     const scrollEl = contentRef.current;
     if (!scrollEl) return;
     function updateSpy() {
+      if (Date.now() < spyLockRef.current) return;
       const {
         scrollTop,
         scrollHeight,
         clientHeight
       } = scrollEl;
 
-      // En üstteyken → All
+      // En üstteyken → All (veya All yoksa ilk section)
       if (scrollTop <= 2) {
-        setScrollSpyActive('__all__');
+        setScrollSpyActive(topNavId());
         return;
       }
 
@@ -1027,13 +1096,48 @@ function DropdownContent({
       passive: true
     });
     return () => scrollEl.removeEventListener('scroll', updateSpy);
-  }, [displayMode, contentRef, setScrollSpyActive]);
+  }, [displayMode, contentRef, setScrollSpyActive, searchQuery]);
 
   // Tab mode: reset scroll position when active tab changes
   react.useEffect(() => {
     if (displayMode !== 'tab') return;
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [displayMode, activeNavId, contentRef]);
+
+  // When the search query changes, virtually highlight the first (best) match
+  // so the user can press Enter to select it while the search input keeps
+  // focus. The list is scrolled so the first selection sits at the top of the
+  // viewport (instead of always resetting to the very top). With no query the
+  // list simply returns to the top.
+  react.useEffect(() => {
+    const list = contentRef.current;
+    if (!list) return;
+    clearActiveItem();
+    if (!searchQuery) {
+      list.scrollTop = 0;
+      setHasNoMatchAnywhere(false);
+      // Search cleared → reset the active category to the top ("All" if present,
+      // otherwise the first section).
+      setScrollSpyActive(topNavId());
+      return;
+    }
+    const items = Array.from(list.querySelectorAll('.hangoverDropdown-item'));
+    const best = pickBestMatch(items, searchQuery);
+    if (best) {
+      setHasNoMatchAnywhere(false);
+      setActiveItem(best);
+      scrollItemToTop(best);
+    } else {
+      // No results anywhere: show global no-match, reset nav to All (or clear).
+      setHasNoMatchAnywhere(true);
+      list.scrollTop = 0;
+      if (navLabels.has('__all__')) {
+        setScrollSpyActive('__all__');
+      } else {
+        setScrollSpyActive(null);
+      }
+    }
+  }, [searchQuery, contentRef]);
 
   // Scroll mode: reserve enough space at the bottom of the list so the last
   // section (even a short single-entry one) can be scrolled all the way to the
@@ -1095,9 +1199,53 @@ function DropdownContent({
     };
   }, [displayMode, contentRef, children, searchQuery]);
   function handleSearch(e) {
+    // Typing changes the visible list, so any virtual highlight is stale.
+    clearActiveItem();
     fireEvent('search', {
       query: e.target.value
     });
+  }
+
+  // ── Virtual highlight (search input keeps focus) ───────────────────────
+  // While the search input is focused, arrow navigation highlights items
+  // without moving DOM focus, so the user can keep editing the query and
+  // press Enter to activate the highlighted item.
+  const HIGHLIGHT_CLASS = 'isActive';
+  function clearActiveItem() {
+    const el = activeItemRef.current;
+    if (el) el.classList.remove(HIGHLIGHT_CLASS);
+    activeItemRef.current = null;
+    searchInputRef.current?.removeAttribute('aria-activedescendant');
+  }
+  function setActiveItem(el) {
+    if (activeItemRef.current && activeItemRef.current !== el) {
+      activeItemRef.current.classList.remove(HIGHLIGHT_CLASS);
+    }
+    activeItemRef.current = el;
+    el.classList.add(HIGHLIGHT_CLASS);
+    if (!el.id) el.id = `hangoverDropdown-item-${Math.random().toString(36).slice(2, 9)}`;
+    searchInputRef.current?.setAttribute('aria-activedescendant', el.id);
+    // Reflect the highlighted item's category as active in the left nav
+    // (scroll mode only) so the nav follows the selection, not the scroll.
+    setNavFromItem(el);
+    scrollItemIntoView(el);
+  }
+
+  // Move the virtual highlight through the visible items. The search input
+  // stays focused the whole time, so navigation wraps among the items only
+  // (it never returns focus/highlight to the input).
+  function moveVirtualHighlight(direction) {
+    const list = contentRef.current;
+    const items = list ? Array.from(list.querySelectorAll('.hangoverDropdown-item')).filter(isVisible) : [];
+    if (items.length === 0) return;
+    const currentIdx = activeItemRef.current ? items.indexOf(activeItemRef.current) : -1;
+    let nextIdx;
+    if (currentIdx === -1) {
+      nextIdx = direction === 1 ? 0 : items.length - 1;
+    } else {
+      nextIdx = (currentIdx + direction + items.length) % items.length;
+    }
+    setActiveItem(items[nextIdx]);
   }
 
   // Keyboard navigation: ArrowDown/ArrowUp move focus across the currently
@@ -1107,17 +1255,60 @@ function DropdownContent({
     const list = contentRef.current;
     if (!list || !el) return;
 
-    // Offset by the sticky section header + the gap between items so the item
-    // stays fully visible with breathing room when navigating.
-    const stickyEl = list.querySelector('.hangoverDropdown-section-title');
-    const stickyHeight = stickyEl ? stickyEl.offsetHeight : 0;
+    // Offset by the sticky headers (section title + a sticky group header) plus
+    // the gap between items so the item stays fully visible with breathing room
+    // and never ends up hidden underneath a pinned header.
+    const stickyHeight = stickyOffsetFor(el);
     const gap = el.parentElement ? parseFloat(getComputedStyle(el.parentElement).rowGap) || 0 : 0;
     scrollWithin(list, el, stickyHeight + gap, gap);
+  }
+
+  // Total height of sticky headers pinned at the top of the list that can
+  // overlap an item: the section title of the item's own section (not the
+  // first title in the list, which may belong to a different section) plus
+  // the item's group header when it is sticky (e.g. the "light" style).
+  function stickyOffsetFor(el) {
+    let offset = 0;
+    // Use the section title of the item's own section so the offset is correct
+    // regardless of which section is currently scrolled to the top.
+    const section = el?.closest('[data-section-for]');
+    const sectionTitle = section?.querySelector('.hangoverDropdown-section-title');
+    if (sectionTitle) offset += sectionTitle.offsetHeight;
+    const header = el?.closest('.hangoverDropdown-group')?.querySelector('.hangoverDropdown-group-header');
+    if (header && getComputedStyle(header).position === 'sticky') {
+      offset += header.offsetHeight;
+    }
+    return offset;
+  }
+
+  // Scroll so `el` sits at the very top of the list (just below any sticky
+  // headers). Uses instant positioning (no animation) so rapid query changes
+  // always land at the exact same pixel. A double-rAF correction is scheduled
+  // so the scroll is re-applied after computeBottomSpace (which runs via
+  // ResizeObserver → rAF) has updated paddingBottom — otherwise the browser
+  // can clamp scrollTop to the stale scrollHeight before padding is added.
+  function scrollItemToTop(el) {
+    const list = contentRef.current;
+    if (!list || !el) return;
+    const stickyHeight = stickyOffsetFor(el);
+    const doScroll = () => {
+      const currentList = contentRef.current;
+      if (!currentList || !el.isConnected) return;
+      const containerTop = currentList.getBoundingClientRect().top;
+      const elTop = el.getBoundingClientRect().top;
+      const offset = elTop - containerTop + currentList.scrollTop - stickyHeight;
+      currentList.scrollTop = Math.max(0, offset);
+    };
+    doScroll(); // immediate best-effort
+    // Re-apply after paddingBottom update (ResizeObserver → rAF → computeBottomSpace)
+    requestAnimationFrame(() => requestAnimationFrame(doScroll));
   }
   function focusTarget(el) {
     if (!el) return;
     if (el === searchInputRef.current) {
       el.focus();
+      lockSpy();
+      setScrollSpyActive(topNavId());
       contentRef.current?.scrollTo({
         top: 0,
         behavior: 'smooth'
@@ -1126,6 +1317,8 @@ function DropdownContent({
       el.focus({
         preventScroll: true
       });
+      lockSpy();
+      setNavFromItem(el);
       scrollItemIntoView(el);
     }
   }
@@ -1189,17 +1382,25 @@ function DropdownContent({
   }
 
   // The search input keeps Left/Right for caret movement; only Up/Down
-  // navigate. All keys are contained (except Escape/Tab) so typing and
+  // navigate. Navigation highlights items virtually so the input never loses
+  // focus — the user can keep editing and press Enter to activate the
+  // highlighted item. All keys are contained (except Escape/Tab) so typing and
   // navigation never trigger the host application's own shortcuts.
   function handleSearchKeyNav(e) {
     if (e.key === 'Escape' || e.key === 'Tab') return;
     e.stopPropagation();
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      moveItemFocus(1);
+      moveVirtualHighlight(1);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      moveItemFocus(-1);
+      moveVirtualHighlight(-1);
+    } else if (e.key === 'Enter') {
+      const el = activeItemRef.current;
+      if (el) {
+        e.preventDefault();
+        el.click();
+      }
     }
   }
   const isEmpty = react.Children.count(children) === 0;
@@ -1217,6 +1418,7 @@ function DropdownContent({
         value: searchQuery,
         onChange: handleSearch,
         onKeyDown: handleSearchKeyNav,
+        onBlur: clearActiveItem,
         ref: searchInputRef
       })]
     }), /*#__PURE__*/jsxRuntime.jsx("div", {
@@ -1227,7 +1429,18 @@ function DropdownContent({
       children: isEmpty ? /*#__PURE__*/jsxRuntime.jsx("div", {
         className: "hangoverDropdown-content-empty",
         children: t(emptyText)
-      }) : children
+      }) : /*#__PURE__*/jsxRuntime.jsxs(jsxRuntime.Fragment, {
+        children: [hasNoMatchAnywhere && /*#__PURE__*/jsxRuntime.jsx("div", {
+          className: "hangoverDropdown-content-empty hangoverDropdown-content-no-match",
+          children: t(noMatchText)
+        }), /*#__PURE__*/jsxRuntime.jsx("div", {
+          "aria-hidden": hasNoMatchAnywhere || undefined,
+          style: hasNoMatchAnywhere ? {
+            display: 'none'
+          } : undefined,
+          children: children
+        })]
+      })
     })]
   });
   if (Comp) {
@@ -1243,101 +1456,6 @@ function DropdownContent({
     className: "hangoverDropdown-column forItems",
     ...rest,
     children: inner
-  });
-}
-
-function DropdownSection({
-  for: forProp,
-  forId: forIdProp,
-  title,
-  children,
-  ...rest
-}) {
-  const {
-    activeNavId,
-    displayMode,
-    registerSectionRef,
-    hasNav,
-    t
-  } = useDropdownContext();
-  const sectionRef = react.useRef(null);
-  const forId = forProp || forIdProp || '__all__';
-
-  // Group registry for expand/collapse all
-  const groupTogglersRef = react.useRef(new Map());
-  const [, tick] = react.useState(0);
-  const forceUpdate = react.useCallback(() => tick(n => n + 1), []);
-  const registerGroup = react.useCallback((key, set, initial) => {
-    groupTogglersRef.current.set(key, {
-      set,
-      isExpanded: initial
-    });
-    forceUpdate();
-  }, [forceUpdate]);
-  const unregisterGroup = react.useCallback(key => {
-    groupTogglersRef.current.delete(key);
-    forceUpdate();
-  }, [forceUpdate]);
-  const notifyGroupState = react.useCallback((key, isExpanded) => {
-    const entry = groupTogglersRef.current.get(key);
-    if (!entry || entry.isExpanded === isExpanded) return;
-    entry.isExpanded = isExpanded;
-    forceUpdate();
-  }, [forceUpdate]);
-  const sectionControlValue = react.useMemo(() => ({
-    registerGroup,
-    unregisterGroup,
-    notifyGroupState
-  }), [registerGroup, unregisterGroup, notifyGroupState]);
-
-  // Register this element so DropdownNavItem can scroll to it
-  react.useEffect(() => {
-    registerSectionRef(forId, sectionRef.current);
-    return () => registerSectionRef(forId, null);
-  }, [forId, registerSectionRef]);
-
-  // Tab mode: hide sections that don't match active nav
-  if (displayMode === 'tab' && activeNavId !== '__all__' && activeNavId !== forId) {
-    return null;
-  }
-  const groups = [...groupTogglersRef.current.values()];
-  const hasGroups = groups.length > 0;
-  const allExpanded = hasGroups && groups.every(e => e.isExpanded);
-  function handleToggleAll() {
-    const next = !allExpanded;
-    groupTogglersRef.current.forEach(({
-      set
-    }) => set(next));
-  }
-  return /*#__PURE__*/jsxRuntime.jsx(SectionContext.Provider, {
-    value: {
-      forId
-    },
-    children: /*#__PURE__*/jsxRuntime.jsx(SectionControlContext.Provider, {
-      value: sectionControlValue,
-      children: /*#__PURE__*/jsxRuntime.jsxs("div", {
-        className: "hangoverDropdown-section",
-        ref: sectionRef,
-        "data-section-for": forId,
-        ...rest,
-        children: [title && hasNav && !(displayMode === 'tab' && activeNavId === '__all__') && /*#__PURE__*/jsxRuntime.jsx("div", {
-          className: `hangoverDropdown-section-title${hasGroups ? ' isClickable' : ''}`,
-          onClick: hasGroups ? handleToggleAll : undefined,
-          "aria-label": hasGroups ? allExpanded ? t('Collapse all groups') : t('Expand all groups') : undefined,
-          role: hasGroups ? 'button' : undefined,
-          tabIndex: hasGroups ? 0 : undefined,
-          onKeyDown: hasGroups ? e => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleToggleAll();
-            }
-          } : undefined,
-          children: /*#__PURE__*/jsxRuntime.jsx("span", {
-            children: t(title)
-          })
-        }), children]
-      })
-    })
   });
 }
 
@@ -3505,6 +3623,133 @@ function getMatchingItemIds(items, query) {
   return new Set(fuse.search(normalizedQuery).map(result => result.item.id));
 }
 
+function DropdownSection({
+  for: forProp,
+  forId: forIdProp,
+  title,
+  children,
+  ...rest
+}) {
+  const {
+    activeNavId,
+    displayMode,
+    registerSectionRef,
+    hasNav,
+    t,
+    searchQuery,
+    setSectionMatch,
+    unregisterSectionMatch,
+    hideEmptyResults
+  } = useDropdownContext();
+  const sectionRef = react.useRef(null);
+  const forId = forProp || forIdProp || '__all__';
+
+  // Whether this section has any item matching the current search. Used to
+  // hide the section title and to let the nav column disable irrelevant
+  // categories.
+  const hasMatch = react.useMemo(() => {
+    if (!searchQuery?.trim()) return true;
+    const items = [];
+    react.Children.forEach(children, group => {
+      react.Children.forEach(group?.props?.children, item => {
+        const id = item?.props?.id;
+        if (!id) return;
+        items.push({
+          id,
+          label: typeof item?.props?.children === 'string' ? t(item.props.children) : ''
+        });
+      });
+    });
+    const matches = getMatchingItemIds(items, searchQuery);
+    return !matches || matches.size > 0;
+  }, [children, searchQuery, t]);
+
+  // Report match status to the dropdown so the nav column can react.
+  react.useEffect(() => {
+    if (forId === '__all__') return;
+    if (!hideEmptyResults) return;
+    setSectionMatch(forId, hasMatch);
+    return () => unregisterSectionMatch(forId);
+  }, [forId, hasMatch, hideEmptyResults, setSectionMatch, unregisterSectionMatch]);
+
+  // Group registry for expand/collapse all
+  const groupTogglersRef = react.useRef(new Map());
+  const [, tick] = react.useState(0);
+  const forceUpdate = react.useCallback(() => tick(n => n + 1), []);
+  const registerGroup = react.useCallback((key, set, initial) => {
+    groupTogglersRef.current.set(key, {
+      set,
+      isExpanded: initial
+    });
+    forceUpdate();
+  }, [forceUpdate]);
+  const unregisterGroup = react.useCallback(key => {
+    groupTogglersRef.current.delete(key);
+    forceUpdate();
+  }, [forceUpdate]);
+  const notifyGroupState = react.useCallback((key, isExpanded) => {
+    const entry = groupTogglersRef.current.get(key);
+    if (!entry || entry.isExpanded === isExpanded) return;
+    entry.isExpanded = isExpanded;
+    forceUpdate();
+  }, [forceUpdate]);
+  const sectionControlValue = react.useMemo(() => ({
+    registerGroup,
+    unregisterGroup,
+    notifyGroupState
+  }), [registerGroup, unregisterGroup, notifyGroupState]);
+
+  // Register this element so DropdownNavItem can scroll to it
+  react.useEffect(() => {
+    registerSectionRef(forId, sectionRef.current);
+    return () => registerSectionRef(forId, null);
+  }, [forId, registerSectionRef]);
+
+  // Tab mode: hide sections that don't match active nav
+  if (displayMode === 'tab' && activeNavId !== '__all__' && activeNavId !== forId) {
+    return null;
+  }
+  const groups = [...groupTogglersRef.current.values()];
+  const hasGroups = groups.length > 0;
+  const allExpanded = hasGroups && groups.every(e => e.isExpanded);
+  function handleToggleAll() {
+    const next = !allExpanded;
+    groupTogglersRef.current.forEach(({
+      set
+    }) => set(next));
+  }
+  return /*#__PURE__*/jsxRuntime.jsx(SectionContext.Provider, {
+    value: {
+      forId
+    },
+    children: /*#__PURE__*/jsxRuntime.jsx(SectionControlContext.Provider, {
+      value: sectionControlValue,
+      children: /*#__PURE__*/jsxRuntime.jsxs("div", {
+        className: "hangoverDropdown-section",
+        ref: sectionRef,
+        "data-section-for": forId,
+        ...rest,
+        children: [title && hasNav && (hasMatch || !hideEmptyResults) && !(displayMode === 'tab' && activeNavId === '__all__') && /*#__PURE__*/jsxRuntime.jsx("div", {
+          className: `hangoverDropdown-section-title${hasGroups ? ' isClickable' : ''}`,
+          onClick: hasGroups ? handleToggleAll : undefined,
+          "aria-label": hasGroups ? allExpanded ? t('Collapse all groups') : t('Expand all groups') : undefined,
+          role: hasGroups ? 'button' : undefined,
+          tabIndex: hasGroups ? 0 : undefined,
+          onKeyDown: hasGroups ? e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleToggleAll();
+            }
+          } : undefined,
+          children: /*#__PURE__*/jsxRuntime.jsx("span", {
+            children: t(title)
+          })
+        }), children]
+      })
+    })
+  });
+}
+
 function DefaultCheckIcon() {
   return /*#__PURE__*/jsxRuntime.jsx("svg", {
     width: "16",
@@ -3756,6 +4001,7 @@ function DropdownGroup({
     activeNavId,
     registerGroupItems,
     searchQuery,
+    hideEmptyResults,
     t
   } = useDropdownContext();
 
@@ -3924,6 +4170,12 @@ function DropdownGroup({
   });
   const hasChildren = react.Children.count(children) > 0;
   const hasVisibleItems = !searchQuery || visibleItemIds.size > 0;
+
+  // While filtering, a group with no matching items is removed entirely
+  // (no "No results" placeholder is rendered for it) — unless hideEmptyResults
+  // is disabled, in which case the "No results" placeholder is shown instead.
+  const isFilteredOut = hideEmptyResults && Boolean(searchQuery?.trim()) && hasChildren && visibleItemIds.size === 0;
+  if (isFilteredOut) return null;
   const items = /*#__PURE__*/jsxRuntime.jsx("div", {
     className: `hangoverDropdown-group-items-wrap${isExpanded ? ' isExpanded' : ''}`,
     children: /*#__PURE__*/jsxRuntime.jsxs("div", {
@@ -3986,6 +4238,7 @@ function normalizeConfig(config) {
     allIcon,
     collapsed,
     autoCollapse,
+    autoCollapseDelay,
     ...rootConfig
   } = config;
   const navigationAliases = {
@@ -4003,6 +4256,9 @@ function normalizeConfig(config) {
     } : {}),
     ...(autoCollapse !== undefined ? {
       autoCollapse
+    } : {}),
+    ...(autoCollapseDelay !== undefined ? {
+      autoCollapseDelay
     } : {})
   };
   const resolvedNavigation = Array.isArray(rootItems) ? {
@@ -4253,6 +4509,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
   useTranslationFunction: useTranslationFunctionProp,
   groupHeaderStyle: groupHeaderStyleProp = 'accent',
   autoFocusSearch: autoFocusSearchProp = true,
+  hideEmptyResults: hideEmptyResultsProp = true,
   children,
   ...rest
 }, ref) {
@@ -4267,6 +4524,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
   const translationFn = fromConfig?.useTranslationFunction ?? useTranslationFunctionProp;
   const groupHeaderStyle = fromConfig?.groupHeaderStyle ?? groupHeaderStyleProp;
   const autoFocusSearch = fromConfig?.autoFocusSearch ?? autoFocusSearchProp;
+  const hideEmptyResults = fromConfig?.hideEmptyResults ?? hideEmptyResultsProp;
 
   // Translation helper. Every user-facing string is routed through this.
   // - With a translation function: returns translationFn(str, payload).
@@ -4346,6 +4604,27 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
     } else {
       sectionRefs.current.delete(forId);
     }
+  }, []);
+
+  // Section match registry: which sections have items matching the current
+  // search. Stored in state so nav items re-render (to disable/enable) when
+  // matches change. Sections without matches let the nav column dim them out.
+  const [sectionMatches, setSectionMatches] = react.useState(() => new Map());
+  const setSectionMatch = react.useCallback((forId, hasMatch) => {
+    setSectionMatches(prev => {
+      if (prev.get(forId) === hasMatch) return prev;
+      const next = new Map(prev);
+      next.set(forId, hasMatch);
+      return next;
+    });
+  }, []);
+  const unregisterSectionMatch = react.useCallback(forId => {
+    setSectionMatches(prev => {
+      if (!prev.has(forId)) return prev;
+      const next = new Map(prev);
+      next.delete(forId);
+      return next;
+    });
   }, []);
 
   /**
@@ -4537,8 +4816,8 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
   }), [fireEvent]); // fireEvent is stable, handle is created once
 
   const setScrollSpyActive = react.useCallback(id => {
-    setActiveNavId(id);
-    const label = navLabels.current.get(id) ?? '';
+    setActiveNavId(id ?? null);
+    const label = id ? navLabels.current.get(id) ?? '' : '';
     setActiveNavLabel(label);
   }, []);
 
@@ -4563,6 +4842,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
     groupHeaderStyle,
     // Behavior
     autoFocusSearch,
+    hideEmptyResults,
     // Refs
     triggerRef,
     contentRef,
@@ -4579,10 +4859,13 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
     navLabels: navLabels.current,
     registerNavLabel,
     sectionRefs: sectionRefs.current,
-    registerSectionRef
+    registerSectionRef,
+    sectionMatches,
+    setSectionMatch,
+    unregisterSectionMatch
   }), [isOpen, selectedItem, checkedItems, activeNavId, activeNavLabel, searchQuery, hasNav, displayMode, defaultGroupExpanded, darkMode,
   // all others are stable references
-  fireEvent, registerGroupItems, setScrollSpyActive, registerNavLabel, registerSectionRef, t, groupHeaderStyle, autoFocusSearch]);
+  fireEvent, registerGroupItems, setScrollSpyActive, registerNavLabel, registerSectionRef, t, groupHeaderStyle, autoFocusSearch, sectionMatches, setSectionMatch, unregisterSectionMatch, hideEmptyResults]);
   const resolvedChildren = (() => {
     if (fromConfig && children) {
       console.warn('[Dropdown] `fromConfig` and `children` cannot be used together. ' + '`fromConfig` takes precedence — `children` will be ignored.');
@@ -4642,6 +4925,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
  *   allIcon?:      ReactNode | FC
  *   collapsed?:    boolean
  *   autoCollapse?: boolean | 'auto'
+ *   autoCollapseDelay?: number
  *
  *   // Content column
  *   content: {

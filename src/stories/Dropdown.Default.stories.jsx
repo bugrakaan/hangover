@@ -46,7 +46,7 @@ export const Basic = {
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Open Dropdown</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
+      <Dropdown.Panel placement="bottom-end">
         <Dropdown.Content>
           <Dropdown.Section>
             <Dropdown.Group label="Fruits">
@@ -72,8 +72,14 @@ export const WithNav = {
     defaultOpen: false,
     defaultGroupExpanded: true,
     hideOnSelection: true,
+    autoCollapse: false,
+    autoCollapseDelay: 0,
   },
-  render: ({ displayMode, defaultOpen, defaultGroupExpanded, hideOnSelection }) => (
+  argTypes: {
+    autoCollapse: { control: 'select', options: [false, true, 'auto'] },
+    autoCollapseDelay: { control: { type: 'number', min: 0, step: 50 } },
+  },
+  render: ({ displayMode, defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay }) => (
     <Dropdown
       displayMode={displayMode}
       defaultOpen={defaultOpen}
@@ -83,8 +89,8 @@ export const WithNav = {
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Open with Navigation</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
-        <Dropdown.Navigation showAll>
+      <Dropdown.Panel placement="bottom-end">
+        <Dropdown.Navigation showAll autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="fruits">Fruits</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="vegetables">Vegetables</Dropdown.NavigationItem>
         </Dropdown.Navigation>
@@ -118,11 +124,15 @@ export const SingleSection = {
     defaultOpen: false,
     defaultGroupExpanded: true,
     hideOnSelection: true,
+    autoCollapse: false,
+    autoCollapseDelay: 0,
   },
   argTypes: {
     displayMode: { table: { disable: true } },
+    autoCollapse: { control: 'select', options: [false, true, 'auto'] },
+    autoCollapseDelay: { control: { type: 'number', min: 0, step: 50 } },
   },
-  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection }) => (
+  render: ({ defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay }) => (
     <Dropdown
       displayMode="scroll"
       defaultOpen={defaultOpen}
@@ -132,8 +142,8 @@ export const SingleSection = {
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Single Section</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
-        <Dropdown.Navigation showAll>
+      <Dropdown.Panel placement="bottom-end">
+        <Dropdown.Navigation showAll autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="fruits">Fruits</Dropdown.NavigationItem>
         </Dropdown.Navigation>
         <Dropdown.Content>
@@ -165,7 +175,7 @@ export const EmptyGroup = {
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Open Dropdown</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
+      <Dropdown.Panel placement="bottom-end">
         <Dropdown.Content>
           <Dropdown.Section>
             <Dropdown.Group label="Fields">
@@ -193,7 +203,7 @@ export const OpenByDefault = {
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Already Open</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
+      <Dropdown.Panel placement="bottom-end">
         <Dropdown.Content>
           <Dropdown.Section>
             <Dropdown.Group label="Items">

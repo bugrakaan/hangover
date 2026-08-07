@@ -132,7 +132,8 @@ Left navigation column. When present, the panel switches to a two-column layout.
 | `allLabel` | `string` | `"All"` | Label for the auto-prepended All item. |
 | `allIcon` | `ReactNode \| FC` | — | Icon for the auto-prepended All item. |
 | `collapsed` | `boolean` | `false` | Start the nav column in collapsed state. |
-| `autoCollapse` | `boolean \| "auto"` | `false` | Automatically collapse the nav column when the viewport is too narrow to fit the full panel width (derived from `--hangover-nav-width` + `--hangover-content-max-width`). Use `"auto"` with `collapsed` to start collapsed and expand while the nav is hovered or keyboard-focused. |
+| `autoCollapse` | `boolean \| "auto"` | `false` | Set `true` to collapse unconditionally. Set `"auto"` to collapse only when the full panel does not fit the viewport. Both modes expand while the nav is hovered or keyboard-focused. |
+| `autoCollapseDelay` | `number` | `0` | Delay in milliseconds before an auto-collapsed nav expands on hover or keyboard focus. Applies to both `true` and `"auto"`; leaving the nav cancels a pending expansion and collapsing remains immediate. |
 | `component` | `React component` | — | Custom wrapper component. |
 | `...rest` | `any` | — | Any additional props are forwarded to the nav column wrapper `<div>` (or `component`). |
 
@@ -345,6 +346,7 @@ const config = {
   allIcon?: ReactNode | FC,
   collapsed?: boolean,
   autoCollapse?: boolean | 'auto',
+  autoCollapseDelay?: number,
 
   // Content column — required
   content: {
@@ -919,18 +921,16 @@ const buttonRef = useRef()
   ...
 </Dropdown.Navigation>
 
-{/* Auto-collapse when the viewport is too narrow */}
-<Dropdown.Navigation autoCollapse>
+{/* Collapse unconditionally; expand on hover or keyboard focus after 150ms */}
+<Dropdown.Navigation autoCollapse autoCollapseDelay={150}>
   ...
 </Dropdown.Navigation>
 
-{/* Start collapsed, expand on hover or keyboard focus */}
-<Dropdown.Navigation collapsed autoCollapse="auto">
+{/* Collapse when the panel does not fit; expand on interaction after 150ms */}
+<Dropdown.Navigation autoCollapse="auto" autoCollapseDelay={150}>
   ...
 </Dropdown.Navigation>
 ```
-
-The `autoCollapse` threshold is `--hangover-nav-width` + `--hangover-content-max-width`. Override either token to tune the breakpoint.
 
 ---
 

@@ -33,6 +33,7 @@ export function normalizeConfig(config) {
     allIcon,
     collapsed,
     autoCollapse,
+    autoCollapseDelay,
     ...rootConfig
   } = config;
 
@@ -42,6 +43,7 @@ export function normalizeConfig(config) {
     ...(allIcon !== undefined ? { allIcon } : {}),
     ...(collapsed !== undefined ? { collapsed } : {}),
     ...(autoCollapse !== undefined ? { autoCollapse } : {}),
+    ...(autoCollapseDelay !== undefined ? { autoCollapseDelay } : {}),
   };
 
   const resolvedNavigation = Array.isArray(rootItems)

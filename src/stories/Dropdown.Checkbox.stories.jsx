@@ -31,7 +31,7 @@ export const Checkbox = {
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Select Multiple</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
+      <Dropdown.Panel placement="bottom-end">
         <Dropdown.Content>
           <Dropdown.Section>
             <Dropdown.Group label="Permissions">
@@ -62,7 +62,7 @@ export const CheckboxWithSelectAll = {
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Select with Select All</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
+      <Dropdown.Panel placement="bottom-end">
         <Dropdown.Content>
           <Dropdown.Section>
             <Dropdown.Group label="Team Members" showSelectAll>
@@ -126,7 +126,7 @@ export const ItemsWithActions = {
           <Dropdown.Trigger>
             <button type="button" className="ho-demo-trigger">Manage Items</button>
           </Dropdown.Trigger>
-          <Dropdown.Panel>
+          <Dropdown.Panel placement="bottom-end">
             <Dropdown.Content>
               <Dropdown.Section>
                 <Dropdown.Group label="Quick Actions">
@@ -216,17 +216,21 @@ export const ScrollSpyWithCheckbox = {
   args: {
     defaultOpen: false,
     defaultGroupExpanded: true,
+    autoCollapse: false,
+    autoCollapseDelay: 0,
   },
   argTypes: {
     hideOnSelection: { table: { disable: true } },
+    autoCollapse: { control: 'select', options: [false, true, 'auto'] },
+    autoCollapseDelay: { control: { type: 'number', min: 0, step: 50 } },
   },
-  render: ({ defaultOpen, defaultGroupExpanded }) => (
+  render: ({ defaultOpen, defaultGroupExpanded, autoCollapse, autoCollapseDelay }) => (
     <Dropdown displayMode="scroll" defaultOpen={defaultOpen} defaultGroupExpanded={defaultGroupExpanded} hideOnSelection={false}>
       <Dropdown.Trigger>
         <button type="button" className="ho-demo-trigger">Configure Access</button>
       </Dropdown.Trigger>
-      <Dropdown.Panel>
-        <Dropdown.Navigation showAll allIcon={IconAll}>
+      <Dropdown.Panel placement="bottom-end">
+        <Dropdown.Navigation showAll allIcon={IconAll} autoCollapse={autoCollapse} autoCollapseDelay={autoCollapseDelay}>
           <Dropdown.NavigationItem id="permissions" icon={IconPermissions}>Permissions</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="notifications" icon={IconNotifications}>Notifications</Dropdown.NavigationItem>
           <Dropdown.NavigationItem id="features" icon={IconFeatures}>Features</Dropdown.NavigationItem>

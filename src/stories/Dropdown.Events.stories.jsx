@@ -102,7 +102,7 @@ export const AllEvents = {
           <Dropdown.Trigger>
             <button type="button" className="ho-demo-trigger">Open (watch events →)</button>
           </Dropdown.Trigger>
-          <Dropdown.Panel>
+          <Dropdown.Panel placement="bottom-end">
             <Dropdown.Content>
               <Dropdown.Section>
                 <Dropdown.Group label="Select items" selectAll>
@@ -171,7 +171,7 @@ export const CancelEvent = {
           <Dropdown.Trigger>
             <button type="button" className="ho-demo-trigger">Select (some locked)</button>
           </Dropdown.Trigger>
-          <Dropdown.Panel>
+          <Dropdown.Panel placement="bottom-end">
             <Dropdown.Content>
               <Dropdown.Section>
                 <Dropdown.Group label="Items">

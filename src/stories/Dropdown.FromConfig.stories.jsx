@@ -25,6 +25,13 @@ export default {
       control: 'boolean',
       description: 'Close panel when an item is selected',
     },
+    autoCollapse: {
+      control: 'select',
+      options: [false, true, 'auto'],
+    },
+    autoCollapseDelay: {
+      control: { type: 'number', min: 0, step: 50 },
+    },
   },
 };
 
@@ -105,6 +112,7 @@ function ItemActions({ onAction }) {
 
 const dropdownConfig = {
   trigger: { label: 'Select Field', className: 'ho-demo-trigger' },
+  panel: { placement: 'bottom-end' },
   showAll: true,
   allLabel: 'All',
   allIcon: IconAll,
@@ -205,14 +213,18 @@ export const Basic = {
     defaultOpen: false,
     defaultGroupExpanded: true,
     hideOnSelection: true,
+    autoCollapse: false,
+    autoCollapseDelay: 0,
   },
-  render: ({ displayMode, defaultOpen, defaultGroupExpanded, hideOnSelection }) => (
+  render: ({ displayMode, defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay }) => (
     <Dropdown fromConfig={{
       ...dropdownConfig,
       displayMode,
       defaultOpen,
       defaultGroupExpanded,
       hideOnSelection,
+      autoCollapse,
+      autoCollapseDelay,
     }} />
   ),
 };
@@ -224,15 +236,18 @@ export const WithAutoCollapse = {
     defaultOpen: true,
     defaultGroupExpanded: true,
     hideOnSelection: true,
+    autoCollapse: 'auto',
+    autoCollapseDelay: 150,
   },
-  render: ({ displayMode, defaultOpen, defaultGroupExpanded, hideOnSelection }) => (
+  render: ({ displayMode, defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay }) => (
     <Dropdown fromConfig={{
       ...dropdownConfig,
       displayMode,
       defaultOpen,
       defaultGroupExpanded,
       hideOnSelection,
-      autoCollapse: true,
+      autoCollapse,
+      autoCollapseDelay,
     }} />
   ),
 };
@@ -244,8 +259,10 @@ export const WithItemActions = {
     defaultOpen: true,
     defaultGroupExpanded: true,
     hideOnSelection: false,
+    autoCollapse: false,
+    autoCollapseDelay: 0,
   },
-  render: ({ displayMode, defaultOpen, defaultGroupExpanded, hideOnSelection }) => {
+  render: ({ displayMode, defaultOpen, defaultGroupExpanded, hideOnSelection, autoCollapse, autoCollapseDelay }) => {
     const [activity, setActivity] = useState('Click an action button inside the config-driven dropdown.');
 
     function handleAction(verb, item) {
@@ -254,10 +271,13 @@ export const WithItemActions = {
 
     const config = {
       trigger: { label: 'Config Actions', className: 'ho-demo-trigger' },
+      panel: { placement: 'bottom-end' },
       displayMode,
       defaultOpen,
       defaultGroupExpanded,
       hideOnSelection,
+      autoCollapse,
+      autoCollapseDelay,
       content: {
         searchPlaceholder: 'Search actions...',
       },

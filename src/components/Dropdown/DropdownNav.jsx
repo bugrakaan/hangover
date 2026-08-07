@@ -16,9 +16,9 @@ import { isVisible, closestByVerticalPosition, scrollWithin } from '../../utils/
  *  children      DropdownNavItem elements
  *  component     custom wrapper component
  *  collapsed     bool — initial/default collapsed state (default false)
- *  autoCollapse  bool | 'auto' — automatically collapse when window is too narrow
- *                to fit the panel. In 'auto' mode, a collapsed nav expands
- *                while hovered or keyboard-focused.
+ *  autoCollapse  bool | 'auto' — true always collapses; 'auto' collapses when
+ *                the panel does not fit. Both expand on hover or focus.
+ *  autoCollapseDelay number — delay in ms before interactive expansion
  */
 function DropdownNav({
   showAll = false,
@@ -28,77 +28,80 @@ function DropdownNav({
   component: Comp,
   collapsed = false,
   autoCollapse = false,
+  autoCollapseDelay = 0,
   ...rest
 }) {
   const { setHasNav, contentRef } = useDropdownContext();
   const wrapperRef = useRef(null);
-  const naturalWidthRef = useRef(null);
-  const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const expandTimerRef = useRef(null);
+  const [isAutoWidthCollapsed, setIsAutoWidthCollapsed] = useState(false);
   const [isInteractivelyExpanded, setIsInteractivelyExpanded] = useState(false);
 
   const childCount = Children.count(children);
   const isSingle = childCount <= 1;
-  const shouldAutoCollapse = autoCollapse === true || autoCollapse === 'auto';
-  const canInteractivelyExpand = autoCollapse === 'auto' && collapsed;
+  const canInteractivelyExpand = autoCollapse === true || autoCollapse === 'auto';
+  const shouldCollapse = collapsed
+    || autoCollapse === true
+    || (autoCollapse === 'auto' && isAutoWidthCollapsed);
+  const isCollapsed = shouldCollapse && !isInteractivelyExpanded;
 
   useEffect(() => {
     setHasNav(!isSingle);
     return () => setHasNav(false);
   }, [setHasNav, isSingle]);
 
-  // collapsed prop always sets the base state
   useEffect(() => {
-    if (canInteractivelyExpand && isInteractivelyExpanded) {
-      setIsCollapsed(false);
-      return;
+    if (autoCollapse !== 'auto') {
+      setIsAutoWidthCollapsed(false);
+      return undefined;
     }
 
-    setIsCollapsed(collapsed);
-  }, [canInteractivelyExpand, collapsed, isInteractivelyExpanded]);
-
-  useEffect(() => {
-    if (!shouldAutoCollapse) return;
-
-    function getNaturalWidth() {
+    const checkWidth = () => {
       const styles = getComputedStyle(document.documentElement);
       const navWidth = parseFloat(styles.getPropertyValue('--hangover-nav-width')) || 0;
       const contentMaxWidth = parseFloat(styles.getPropertyValue('--hangover-content-max-width')) || 0;
-      return navWidth + contentMaxWidth;
-    }
-
-    function check() {
-      if (naturalWidthRef.current === null) {
-        naturalWidthRef.current = getNaturalWidth();
-      }
-      const panelTooWide = window.innerWidth < naturalWidthRef.current + 32;
-      setIsCollapsed(canInteractivelyExpand && isInteractivelyExpanded
-        ? false
-        : panelTooWide || collapsed);
-    }
-
-    window.addEventListener('resize', check);
-    window.addEventListener('scroll', check, { passive: true });
-    check();
-
-    return () => {
-      window.removeEventListener('resize', check);
-      window.removeEventListener('scroll', check);
-      naturalWidthRef.current = null;
-      setIsCollapsed(collapsed);
+      setIsAutoWidthCollapsed(window.innerWidth < navWidth + contentMaxWidth + 32);
     };
-  }, [canInteractivelyExpand, collapsed, isInteractivelyExpanded, shouldAutoCollapse]);
+
+    window.addEventListener('resize', checkWidth);
+    checkWidth();
+
+    return () => window.removeEventListener('resize', checkWidth);
+  }, [autoCollapse]);
+
+  const clearExpandTimer = () => {
+    if (expandTimerRef.current === null) return;
+    window.clearTimeout(expandTimerRef.current);
+    expandTimerRef.current = null;
+  };
 
   const expandInteractively = () => {
-    if (canInteractivelyExpand) {
+    if (!canInteractivelyExpand || isInteractivelyExpanded || expandTimerRef.current !== null) return;
+
+    const delay = Number.isFinite(autoCollapseDelay)
+      ? Math.max(0, autoCollapseDelay)
+      : 0;
+    if (delay === 0) {
       setIsInteractivelyExpanded(true);
+      return;
     }
+
+    expandTimerRef.current = window.setTimeout(() => {
+      expandTimerRef.current = null;
+      setIsInteractivelyExpanded(true);
+    }, delay);
   };
 
   const collapseInteractively = () => {
-    if (canInteractivelyExpand) {
-      setIsInteractivelyExpanded(false);
-    }
+    clearExpandTimer();
+    setIsInteractivelyExpanded(false);
   };
+
+  useEffect(() => {
+    if (!canInteractivelyExpand) collapseInteractively();
+  }, [canInteractivelyExpand]);
+
+  useEffect(() => () => clearExpandTimer(), []);
 
   const handleBlur = e => {
     if (!wrapperRef.current?.contains(e.relatedTarget)) {

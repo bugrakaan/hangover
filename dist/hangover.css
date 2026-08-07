@@ -262,7 +262,7 @@
   font-weight: 500;
   line-height: 16px;
   color: var(--hangover-color-text);
-  transition: background var(--hangover-transition);
+  transition: background var(--hangover-transition), opacity var(--hangover-transition);
   box-sizing: border-box;
 }
 .hangoverDropdown-nav-item:hover {
@@ -281,6 +281,11 @@
 }
 .hangoverDropdown-nav-item.isActive:focus-visible {
   background: var(--hangover-color-bg-nav-focus);
+}
+.hangoverDropdown-nav-item.isDisabled, .hangoverDropdown-nav-item:disabled {
+  cursor: default;
+  opacity: 0.4;
+  pointer-events: none;
 }
 .hangoverDropdown-nav-item-icon {
   display: flex;
@@ -374,6 +379,12 @@
   margin: 8px;
   margin-top: 8px;
   margin-bottom: 4px;
+}
+.hangoverDropdown-content-no-match {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: var(--hangover-font-size-base);
+  color: var(--hangover-color-text-muted);
 }
 .hangoverDropdown-list {
   flex: 1;
@@ -533,6 +544,9 @@
 .hangoverDropdown-item:focus-visible {
   background: var(--hangover-color-bg-focus);
   outline: none;
+}
+.hangoverDropdown-item.isActive {
+  background: var(--hangover-color-bg-focus);
 }
 .hangoverDropdown-item.isSelected {
   background: var(--hangover-color-bg-selected);
