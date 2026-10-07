@@ -2,37 +2,6 @@ import { useEffect, useRef, useState, Children } from 'react';
 import { useDropdownContext } from '../../context/DropdownContext';
 import { isVisible, closestByVerticalPosition, scrollWithin } from '../../utils/keyboardNav';
 
-// Score how well an item's label matches the query. Higher is better.
-// Ranking is by match quality only — exact > prefix > substring > fuzzy — so
-// that items within the same tier keep their original list order (the caller
-// iterates in DOM order and keeps the first item with the top score).
-function matchScore(label, query) {
-  if (label === query) return 3;
-  if (label.startsWith(query)) return 2;
-  if (label.includes(query)) return 1;
-  return 0;
-}
-
-// Pick the best-matching element among the visible items for the given query.
-function pickBestMatch(items, query) {
-  const q = query.trim().toLowerCase();
-  if (!q) return items[0] ?? null;
-  let best = null;
-  let bestScore = -Infinity;
-  for (const el of items) {
-    const label = (el.querySelector('.hangoverDropdown-item-label')?.textContent ?? '')
-      .trim()
-      .toLowerCase();
-    if (!label) continue;
-    const score = matchScore(label, q);
-    if (score > bestScore) {
-      bestScore = score;
-      best = el;
-    }
-  }
-  return best ?? items[0] ?? null;
-}
-
 // Default search icon (inline SVG)
 function DefaultSearchIcon() {
   return (
@@ -146,7 +115,7 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [displayMode, activeNavId, contentRef]);
 
-  // When the search query changes, virtually highlight the first (best) match
+  // When the search query changes, virtually highlight the first visible match
   // so the user can press Enter to select it while the search input keeps
   // focus. The list is scrolled so the first selection sits at the top of the
   // viewport (instead of always resetting to the very top). With no query the
@@ -164,11 +133,11 @@ function DropdownContent({ searchPlaceholder = 'Search', emptyText = 'Nothing to
       return;
     }
     const items = Array.from(list.querySelectorAll('.hangoverDropdown-item'));
-    const best = pickBestMatch(items, searchQuery);
-    if (best) {
+    const firstMatch = items[0];
+    if (firstMatch) {
       setHasNoMatchAnywhere(false);
-      setActiveItem(best);
-      scrollItemToTop(best);
+      setActiveItem(firstMatch);
+      scrollItemToTop(firstMatch);
     } else {
       // No results anywhere: show global no-match, reset nav to All (or clear).
       setHasNoMatchAnywhere(true);
