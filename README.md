@@ -78,6 +78,7 @@ Root provider. All state lives here.
 | `darkMode` | `boolean` | `false` | Enable dark mode. Applies `hangoverDropdown--dark` CSS class which overrides all color tokens. |
 | `searchQuery` | `string` | — | Controlled search query. When provided, the internal search state is kept in sync with this value. Use together with `onEvent` (`type: "search"`) to handle changes. |
 | `defaultSearchQuery` | `string` | `""` | Uncontrolled initial search query. Only applied on first render. |
+| `fuseOptions` | `object` | `{ keys: ['label'], threshold: 0.4, ignoreLocation: true, shouldSort: false }` | Optional Fuse.js options, merged with the defaults. Applied consistently to item filtering and category visibility. Also supported through `fromConfig`. Does not change the rendered item order or the first-visible-item keyboard highlight. |
 | `useTranslationFunction` | `(text, payload?) => string` | — | Translation hook. When provided, **every** user-facing string — including built-in defaults — is routed through this function. See [Translation](#translation). |
 | `groupHeaderStyle` | `"accent" \| "light"` | `"accent"` | Group header appearance. `"accent"` is the filled header with a colored accent bar; `"light"` renders headers like section titles (flat, uppercase, muted, no accent) — handy when there is no navigation column. |
 | `autoFocusSearch` | `boolean` | `true` | Focus the search input automatically when the panel opens. Set to `false` to leave focus untouched. |
@@ -87,6 +88,20 @@ Root provider. All state lives here.
 | `...rest` | `any` | — | Any additional props (e.g. `data-*`, `className`, `style`) are forwarded to the root `<div>`. |
 
 ---
+
+### Custom search options
+
+Use `threshold: 0` for case-insensitive literal substring matching at any position:
+
+```jsx
+<Dropdown fuseOptions={{ threshold: 0, ignoreLocation: true }}>
+  {/* Trigger, panel and content */}
+</Dropdown>
+```
+
+These options require the query to appear as an exact substring anywhere in an
+item's label, ignoring case. Omitted options keep their defaults. The same
+options can be supplied as `fromConfig.fuseOptions`.
 
 ### `<Dropdown.Trigger>`
 

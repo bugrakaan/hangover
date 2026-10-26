@@ -66,7 +66,7 @@ function DropdownGroup({
   children,
   ...rest
 }) {
-  const { fireEvent, checkedItems, firstGroupClaimedRef, defaultGroupExpanded, displayMode, activeNavId, registerGroupItems, searchQuery, hideEmptyResults, t } = useDropdownContext();
+  const { fireEvent, checkedItems, firstGroupClaimedRef, defaultGroupExpanded, displayMode, activeNavId, registerGroupItems, searchQuery, hideEmptyResults, t, fuseOptions } = useDropdownContext();
 
   // Determine initial expanded state
   const expandedInitRef = useRef(null);
@@ -182,8 +182,8 @@ function DropdownGroup({
       label: typeof child?.props?.children === 'string' ? t(child.props.children) : '',
     }));
 
-    return getMatchingItemIds(searchableItems, searchQuery);
-  }, [children, searchQuery, t]);
+    return getMatchingItemIds(searchableItems, searchQuery, fuseOptions);
+  }, [children, searchQuery, t, fuseOptions]);
 
   const groupContextValue = { groupLabel: label, groupId, resolvedColor, visibleItemIds };
 

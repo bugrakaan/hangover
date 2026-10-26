@@ -7,7 +7,7 @@ const FUSE_OPTIONS = {
   shouldSort: false,
 };
 
-export function getMatchingItemIds(items, query) {
+export function getMatchingItemIds(items, query, fuseOptions) {
   const normalizedQuery = query?.trim();
 
   if (!normalizedQuery) {
@@ -20,7 +20,7 @@ export function getMatchingItemIds(items, query) {
     return new Set();
   }
 
-  const fuse = new Fuse(searchableItems, FUSE_OPTIONS);
+  const fuse = new Fuse(searchableItems, { ...FUSE_OPTIONS, ...fuseOptions });
 
   return new Set(fuse.search(normalizedQuery).map(result => result.item.id));
 }

@@ -24,6 +24,7 @@ export { buildFromConfig } from './buildFromConfig';
  *   defaultOpen?:          boolean
  *   defaultGroupExpanded?: boolean | 'first'
  *   hideOnSelection?:      boolean
+ *   fuseOptions?:          object    // overrides Fuse.js search defaults
  *   onEvent?:              ({ type, payload, prev }) => any
  *
  *   // Trigger

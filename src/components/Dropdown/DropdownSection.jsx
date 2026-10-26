@@ -12,7 +12,7 @@ import { getMatchingItemIds } from '../../utils/fuzzySearch';
  *  children DropdownGroup elements
  */
 function DropdownSection({ for: forProp, forId: forIdProp, title, children, ...rest }) {
-  const { activeNavId, displayMode, registerSectionRef, hasNav, t, searchQuery, setSectionMatch, unregisterSectionMatch, hideEmptyResults } = useDropdownContext();
+  const { activeNavId, displayMode, registerSectionRef, hasNav, t, searchQuery, setSectionMatch, unregisterSectionMatch, hideEmptyResults, fuseOptions } = useDropdownContext();
   const sectionRef = useRef(null);
   const forId = forProp || forIdProp || '__all__';
 
@@ -32,9 +32,9 @@ function DropdownSection({ for: forProp, forId: forIdProp, title, children, ...r
         });
       });
     });
-    const matches = getMatchingItemIds(items, searchQuery);
+    const matches = getMatchingItemIds(items, searchQuery, fuseOptions);
     return !matches || matches.size > 0;
-  }, [children, searchQuery, t]);
+  }, [children, searchQuery, t, fuseOptions]);
 
   // Report match status to the dropdown so the nav column can react.
   useEffect(() => {

@@ -38,6 +38,7 @@ const Dropdown = forwardRef(function Dropdown(
     groupHeaderStyle: groupHeaderStyleProp = 'accent',
     autoFocusSearch: autoFocusSearchProp = true,
     hideEmptyResults: hideEmptyResultsProp = true,
+    fuseOptions: fuseOptionsProp,
     children,
     ...rest
   },
@@ -55,6 +56,7 @@ const Dropdown = forwardRef(function Dropdown(
   const groupHeaderStyle = fromConfig?.groupHeaderStyle ?? groupHeaderStyleProp;
   const autoFocusSearch = fromConfig?.autoFocusSearch ?? autoFocusSearchProp;
   const hideEmptyResults = fromConfig?.hideEmptyResults ?? hideEmptyResultsProp;
+  const fuseOptions = fromConfig?.fuseOptions ?? fuseOptionsProp;
 
   // Translation helper. Every user-facing string is routed through this.
   // - With a translation function: returns translationFn(str, payload).
@@ -334,6 +336,7 @@ const Dropdown = forwardRef(function Dropdown(
     // Behavior
     autoFocusSearch,
     hideEmptyResults,
+    fuseOptions,
     // Refs
     triggerRef,
     contentRef,
@@ -361,7 +364,7 @@ const Dropdown = forwardRef(function Dropdown(
     // all others are stable references
     fireEvent, registerGroupItems, setScrollSpyActive,
     registerNavLabel, registerSectionRef, t, groupHeaderStyle, autoFocusSearch,
-    sectionMatches, setSectionMatch, unregisterSectionMatch, hideEmptyResults,
+    sectionMatches, setSectionMatch, unregisterSectionMatch, hideEmptyResults, fuseOptions,
   ]);
   const resolvedChildren = (() => {
     if (fromConfig && children) {

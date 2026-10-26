@@ -3584,7 +3584,7 @@ const FUSE_OPTIONS = {
   ignoreLocation: true,
   shouldSort: false
 };
-function getMatchingItemIds(items, query) {
+function getMatchingItemIds(items, query, fuseOptions) {
   const normalizedQuery = query?.trim();
   if (!normalizedQuery) {
     return null;
@@ -3593,7 +3593,10 @@ function getMatchingItemIds(items, query) {
   if (searchableItems.length === 0) {
     return new Set();
   }
-  const fuse = new Fuse(searchableItems, FUSE_OPTIONS);
+  const fuse = new Fuse(searchableItems, {
+    ...FUSE_OPTIONS,
+    ...fuseOptions
+  });
   return new Set(fuse.search(normalizedQuery).map(result => result.item.id));
 }
 
@@ -3613,7 +3616,8 @@ function DropdownSection({
     searchQuery,
     setSectionMatch,
     unregisterSectionMatch,
-    hideEmptyResults
+    hideEmptyResults,
+    fuseOptions
   } = useDropdownContext();
   const sectionRef = react.useRef(null);
   const forId = forProp || forIdProp || '__all__';
@@ -3634,9 +3638,9 @@ function DropdownSection({
         });
       });
     });
-    const matches = getMatchingItemIds(items, searchQuery);
+    const matches = getMatchingItemIds(items, searchQuery, fuseOptions);
     return !matches || matches.size > 0;
-  }, [children, searchQuery, t]);
+  }, [children, searchQuery, t, fuseOptions]);
 
   // Report match status to the dropdown so the nav column can react.
   react.useEffect(() => {
@@ -3976,7 +3980,8 @@ function DropdownGroup({
     registerGroupItems,
     searchQuery,
     hideEmptyResults,
-    t
+    t,
+    fuseOptions
   } = useDropdownContext();
 
   // Determine initial expanded state
@@ -4099,8 +4104,8 @@ function DropdownGroup({
       id: child?.props?.id,
       label: typeof child?.props?.children === 'string' ? t(child.props.children) : ''
     }));
-    return getMatchingItemIds(searchableItems, searchQuery);
-  }, [children, searchQuery, t]);
+    return getMatchingItemIds(searchableItems, searchQuery, fuseOptions);
+  }, [children, searchQuery, t, fuseOptions]);
   const groupContextValue = {
     groupLabel: label,
     groupId,
@@ -4484,6 +4489,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
   groupHeaderStyle: groupHeaderStyleProp = 'accent',
   autoFocusSearch: autoFocusSearchProp = true,
   hideEmptyResults: hideEmptyResultsProp = true,
+  fuseOptions: fuseOptionsProp,
   children,
   ...rest
 }, ref) {
@@ -4499,6 +4505,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
   const groupHeaderStyle = fromConfig?.groupHeaderStyle ?? groupHeaderStyleProp;
   const autoFocusSearch = fromConfig?.autoFocusSearch ?? autoFocusSearchProp;
   const hideEmptyResults = fromConfig?.hideEmptyResults ?? hideEmptyResultsProp;
+  const fuseOptions = fromConfig?.fuseOptions ?? fuseOptionsProp;
 
   // Translation helper. Every user-facing string is routed through this.
   // - With a translation function: returns translationFn(str, payload).
@@ -4817,6 +4824,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
     // Behavior
     autoFocusSearch,
     hideEmptyResults,
+    fuseOptions,
     // Refs
     triggerRef,
     contentRef,
@@ -4839,7 +4847,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
     unregisterSectionMatch
   }), [isOpen, selectedItem, checkedItems, activeNavId, activeNavLabel, searchQuery, hasNav, displayMode, defaultGroupExpanded, darkMode,
   // all others are stable references
-  fireEvent, registerGroupItems, setScrollSpyActive, registerNavLabel, registerSectionRef, t, groupHeaderStyle, autoFocusSearch, sectionMatches, setSectionMatch, unregisterSectionMatch, hideEmptyResults]);
+  fireEvent, registerGroupItems, setScrollSpyActive, registerNavLabel, registerSectionRef, t, groupHeaderStyle, autoFocusSearch, sectionMatches, setSectionMatch, unregisterSectionMatch, hideEmptyResults, fuseOptions]);
   const resolvedChildren = (() => {
     if (fromConfig && children) {
       console.warn('[Dropdown] `fromConfig` and `children` cannot be used together. ' + '`fromConfig` takes precedence — `children` will be ignored.');
@@ -4872,6 +4880,7 @@ const Dropdown$1 = /*#__PURE__*/react.forwardRef(function Dropdown({
  *   defaultOpen?:          boolean
  *   defaultGroupExpanded?: boolean | 'first'
  *   hideOnSelection?:      boolean
+ *   fuseOptions?:          object    // overrides Fuse.js search defaults
  *   onEvent?:              ({ type, payload, prev }) => any
  *
  *   // Trigger
