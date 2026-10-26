@@ -7,6 +7,10 @@ on:
         description: 'Type "publish" to confirm npm publish'
         required: true
         default: ''
+      dry_run:
+        description: 'Validate the release without publishing to npm'
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -19,7 +23,7 @@ jobs:
       id-token: write  # Required for npm provenance
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -38,7 +42,12 @@ jobs:
         run: npm run build
 
       - name: Publish to npm with provenance
+        if: ${{ !inputs.dry_run }}
         run: npm publish --provenance --access public --registry=https://registry.npmjs.org
         env:
           # npm uses a configured Trusted Publisher first, with this token as fallback.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Validate npm package
+        if: ${{ inputs.dry_run }}
+        run: npm publish --dry-run --access public --registry=https://registry.npmjs.org
